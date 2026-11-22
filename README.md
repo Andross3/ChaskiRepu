@@ -9,7 +9,8 @@ Proyecto del Abstracthon 2026 (track Ayuda tecnológica).
 - **Vehículo 3D interactivo:** eliges auto o moto, tocas la zona que falla (llantas, frenos, motor, luces...) y la cámara se acerca; un panel te muestra las piezas de esa zona para identificar la correcta, o puedes subir una foto.
 - **Búsqueda y filtros:** por nombre o descripción, precio, condición (original, alternativo, usado, restaurado) y disponibilidad.
 - **Detalle del repuesto y reserva:** reserva con una comisión, elección de recoger en tienda o envío a domicilio, y pago simulado con QR.
-- **Para tiendas:** inicio de sesión por rol, formulario de datos de la tienda y panel con inventario, reservas y oportunidades de venta.
+- **Portada y roles:** la portada pública muestra el auto con el buscador; al iniciar sesión, quien compra entra a su área de compra y quien tiene tienda entra a su panel.
+- **Para tiendas:** formulario de datos de la tienda, panel con inventario, reservas y oportunidades de venta, y formulario para publicar repuestos con vista previa.
 
 ## Tecnologías
 
@@ -49,7 +50,7 @@ Esto es un prototipo para el hackathon. Lo que es de demostración:
 ## Estructura
 
 ```
-app/          páginas (inicio, buscar, repuesto, entrar, tienda)
+app/          páginas (inicio, comprar, buscar, repuesto, entrar, tienda)
 components/   interfaz y el vehículo 3D
 lib/          tipos, datos de Supabase, piezas por zona
 ```

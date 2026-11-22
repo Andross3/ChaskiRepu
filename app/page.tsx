@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Destacados } from "@/components/Destacados";
 import { EtiquetaCondicion } from "@/components/Etiqueta";
-import { Hero } from "@/components/Hero";
+import { Portada } from "@/components/Portada";
 import { CONDICIONES } from "@/lib/tipos";
 
 const PASOS = [
@@ -27,9 +27,9 @@ const PASOS = [
 export default function Inicio() {
   return (
     <main>
-      <Hero />
+      <Portada />
 
-      <section id="como-funciona" className="scroll-mt-20 pb-16 pt-40">
+      <section id="como-funciona" className="scroll-mt-20 py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <h2 className="font-display text-4xl font-semibold tracking-tight text-marino sm:text-[44px]">
             Encuentra, reserva y recibe

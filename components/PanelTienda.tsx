@@ -19,7 +19,6 @@ const OPORTUNIDADES = [
 
 export function PanelTienda() {
   const [items, setItems] = useState<Repuesto[] | null>(null);
-  const [aviso, setAviso] = useState("");
 
   useEffect(() => {
     let vivo = true;
@@ -58,21 +57,11 @@ export function PanelTienda() {
           >
             Editar datos de la tienda
           </Link>
-          <button
-            type="button"
-            onClick={() => setAviso("Pronto podrás publicar repuestos con fotos desde aquí.")}
-            className="rounded-xl boton-primario px-5 py-2.5 text-[14px] font-semibold"
-          >
+          <Link href="/tienda/publicar" className="rounded-xl boton-primario px-5 py-2.5 text-[14px] font-semibold">
             Publicar repuesto
-          </button>
+          </Link>
         </div>
       </div>
-
-      {aviso && (
-        <p role="status" className="mt-4 rounded-xl border border-linea bg-azul-suave px-4 py-3 text-[14px] font-medium text-marino">
-          {aviso}
-        </p>
-      )}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {tarjetas.map(([t, v]) => (

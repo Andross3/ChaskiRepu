@@ -563,10 +563,15 @@ function enfocar(
   camera: THREE.Camera,
   zona: [number, number, number] | null,
   escala: number,
+  panelAbajo: boolean,
 ) {
   if (!controles) return;
   if (zona) {
-    _destinoTarget.set(zona[0] * escala + 0.6, zona[1] * escala, zona[2] * escala);
+    _destinoTarget.set(
+      zona[0] * escala + (panelAbajo ? 0 : 0.6),
+      zona[1] * escala - (panelAbajo ? 0.3 : 0),
+      zona[2] * escala,
+    );
     _destinoCamara.set(_destinoTarget.x + 1.5, _destinoTarget.y + 0.95, _destinoTarget.z + 3.0);
   } else {
     _destinoTarget.copy(TARGET_BASE);
@@ -608,7 +613,7 @@ function Resalte({ posicion, radio }: { posicion: [number, number, number]; radi
   );
 }
 
-function Escena({ tipo, zonas, zonaId, onZona, botones }: Props & { tipo: TipoVehiculo }) {
+function Escena({ tipo, zonas, zonaId, onZona, botones, panelAbajo }: Props & { tipo: TipoVehiculo; panelAbajo: boolean }) {
   const controles = useThree((s) => s.controls) as unknown as ControlesOrbita | null;
   const camera = useThree((s) => s.camera);
   const limite = useRef(0);
@@ -624,7 +629,7 @@ function Escena({ tipo, zonas, zonaId, onZona, botones }: Props & { tipo: TipoVe
   }, [zonaId, tipo]);
 
   useFrame(() => {
-    if (performance.now() < limite.current) enfocar(controles, camera, posZona, escala);
+    if (performance.now() < limite.current) enfocar(controles, camera, posZona, escala, panelAbajo);
   });
 
   return (
@@ -672,7 +677,8 @@ export default function CarroTecnico3D({
   zonas,
   zonaId,
   onZona,
-}: Omit<Props, "botones"> & { tipo: TipoVehiculo }) {
+  panelAbajo = false,
+}: Omit<Props, "botones"> & { tipo: TipoVehiculo; panelAbajo?: boolean }) {
   const botones: Botones = useRef({});
 
   return (
@@ -683,7 +689,7 @@ export default function CarroTecnico3D({
         gl={{ alpha: true, antialias: true }}
         aria-label="Vehículo en 3D. Arrastra para girarlo y toca un punto para elegir la zona."
       >
-        <Escena tipo={tipo} zonas={zonas} zonaId={zonaId} onZona={onZona} botones={botones} />
+        <Escena tipo={tipo} zonas={zonas} zonaId={zonaId} onZona={onZona} botones={botones} panelAbajo={panelAbajo} />
       </Canvas>
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {zonas.map((z) => {

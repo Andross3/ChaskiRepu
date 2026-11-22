@@ -24,7 +24,7 @@ export function FormularioEntrar() {
 
   function continuar() {
     if (esTienda) router.push(crear ? "/tienda/registro" : "/tienda");
-    else router.push("/");
+    else router.push("/comprar");
   }
 
   return (
