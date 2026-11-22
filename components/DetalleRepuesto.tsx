@@ -4,10 +4,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Chip, EtiquetaCondicion } from "./Etiqueta";
-import { Ilustracion } from "./Ilustracion";
 import { fondoPor } from "./TarjetaRepuesto";
 import { cargarRepuestos } from "@/lib/datos";
-import { fotoDe } from "@/lib/fotos";
+import { FotoRepuesto } from "./FotoRepuesto";
 import { distanciaKm, textoDistancia, UBICACION_BASE } from "@/lib/geo";
 import { COMISION_RESERVA_BS, condicionInfo, formatBs, type Repuesto } from "@/lib/tipos";
 
@@ -153,12 +152,11 @@ export function DetalleRepuesto() {
                 EJEMPLO
               </span>
             )}
-            {fotoDe(r) ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={fotoDe(r) ?? ""} alt={r.nombre} className="h-64 w-full max-w-md rounded-2xl object-cover" />
-            ) : (
-              <Ilustracion categoria={r.categoria} className="flotar h-56 w-72" />
-            )}
+            <FotoRepuesto
+              r={r}
+              claseFoto="h-64 w-full max-w-md rounded-2xl object-cover"
+              claseIlustracion="flotar h-56 w-72"
+            />
           </div>
 
           <h1 className="mt-7 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{r.nombre}</h1>
