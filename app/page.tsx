@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Destacados } from "@/components/Destacados";
 import { EtiquetaCondicion } from "@/components/Etiqueta";
 import { Portada } from "@/components/Portada";
+import { LOGOS_MARCA, MARCAS_DESTACADAS } from "@/lib/marcas";
 import { CONDICIONES } from "@/lib/tipos";
 
 const PASOS = [
@@ -28,6 +30,38 @@ export default function Inicio() {
   return (
     <main>
       <Portada />
+
+      <section id="marcas" className="scroll-mt-20 border-b border-linea bg-white py-14">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="font-display text-3xl font-semibold tracking-tight text-marino sm:text-4xl">
+            Busca por la marca de tu vehículo
+          </h2>
+          <p className="mt-2 max-w-xl text-[16px] text-ink-2">Toca el logo y mira los repuestos disponibles.</p>
+          <ul className="mt-8 grid grid-cols-3 gap-4 sm:grid-cols-5 lg:grid-cols-9">
+            {MARCAS_DESTACADAS.map((m) => (
+              <li key={m}>
+                <Link
+                  href={`/buscar?tipo=auto&marca=${encodeURIComponent(m)}`}
+                  aria-label={`Repuestos para ${m}`}
+                  className="revelar group flex h-24 items-center justify-center rounded-2xl border border-linea bg-white p-3 sombra-suave transition hover:-translate-y-1 hover:border-azul/50"
+                >
+                  {LOGOS_MARCA[m] ? (
+                    <Image
+                      src={LOGOS_MARCA[m]}
+                      alt={m}
+                      width={240}
+                      height={160}
+                      className="h-full w-full object-contain transition group-hover:scale-105"
+                    />
+                  ) : (
+                    <span className="text-center text-[15px] font-bold text-marino">{m}</span>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
       <section id="como-funciona" className="scroll-mt-20 py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">

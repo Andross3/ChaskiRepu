@@ -35,17 +35,19 @@ export function Navbar() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Link
-            href="/entrar"
-            className={`hidden rounded-xl px-4 py-2 text-[14px] font-semibold transition sm:inline-block ${
-              oscuro ? "border border-white/20 text-white hover:bg-white/10" : "text-marino hover:bg-arena"
-            }`}
-          >
-            Iniciar sesión
-          </Link>
-          <Link href="/entrar?crear=1" className="rounded-xl boton-primario px-4 py-2 text-[14px] font-semibold">
-            Crear cuenta
-          </Link>
+          {!oscuro && (
+            <>
+              <Link
+                href="/entrar"
+                className="hidden rounded-xl px-4 py-2 text-[14px] font-semibold text-marino transition hover:bg-arena sm:inline-block"
+              >
+                Iniciar sesión
+              </Link>
+              <Link href="/entrar?crear=1" className="rounded-xl boton-primario px-4 py-2 text-[14px] font-semibold">
+                Crear cuenta
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>

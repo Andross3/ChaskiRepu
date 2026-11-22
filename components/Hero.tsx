@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { PanelPieza } from "./PanelPieza";
+import { SelectorMarca } from "./SelectorMarca";
 import { ANIOS, MARCAS, SUGERENCIAS, useBuscador } from "@/lib/useBuscador";
 
 const CarroTecnico3D = dynamic(() => import("./CarroTecnico3D"), {
@@ -117,18 +118,11 @@ export function Hero({ saludo, titulo }: { saludo: string; titulo: string }) {
             )}
           </div>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <label className={etiqueta}>
-              Marca
-              <select value={b.marca} onChange={(e) => b.setMarca(e.target.value)} className={campo}>
-                <option value="">Elige la marca</option>
-                {MARCAS[tipo].map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="mt-4">
+            <SelectorMarca claro marcas={MARCAS[tipo]} valor={b.marca} onCambiar={b.setMarca} />
+          </div>
+
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <label className={etiqueta}>
               Modelo
               <input
