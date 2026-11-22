@@ -115,7 +115,7 @@ export function PanelPieza({ tipo, motor, zona, pieza, onPieza, onCerrar, hrefBa
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/40 bg-white/5 px-3 py-3 text-center transition hover:bg-white/10">
               {foto ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={foto} alt="Foto de la pieza que subiste" className="h-20 w-full rounded-lg object-cover" />
+                <img src={foto} alt="Foto de la pieza que subiste" className="h-14 w-full rounded-lg object-cover" />
               ) : (
                 <span className="text-[13px] font-semibold text-white/90">Toca para elegir una foto</span>
               )}
@@ -134,44 +134,6 @@ export function PanelPieza({ tipo, motor, zona, pieza, onPieza, onCerrar, hrefBa
               />
             </label>
           </div>
-          <button
-            type="button"
-            onClick={identificar}
-            disabled={!archivo || analizando}
-            className="mt-2 rounded-xl border border-cian/60 bg-cian/15 px-4 py-2 text-[14px] font-semibold text-white transition hover:bg-cian/25 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {analizando ? "Analizando la foto..." : "Identificar la pieza con IA"}
-          </button>
-
-          {resultadoIA && (
-            <div role="status" className="mt-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-[13px] leading-snug">
-              {resultadoIA.estado === "identificada" ? (
-                <>
-                  <p className="text-[15px] font-semibold">
-                    Parece: {resultadoIA.pieza}{" "}
-                    <span className="text-[12px] font-medium text-white/70">(confianza {resultadoIA.confianza})</span>
-                  </p>
-                  {resultadoIA.motivo && <p className="mt-0.5 text-white/75">{resultadoIA.motivo}</p>}
-                  {resultadoIA.aviso && <p className="mt-1 font-semibold text-ambar">{resultadoIA.aviso}</p>}
-                </>
-              ) : (
-                <>
-                  <p className="text-[15px] font-semibold">No estoy seguro de qué pieza es.</p>
-                  <p className="mt-0.5 text-white/75">
-                    Prueba con otra foto más cercana o describe qué ves. Si no la encuentras, puedes pedirla a las tiendas.
-                  </p>
-                </>
-              )}
-            </div>
-          )}
-          {errorIA && (
-            <p role="alert" className="mt-2 rounded-xl border border-rojo/40 bg-rojo/15 px-3 py-2 text-[13px] font-medium">
-              {errorIA}
-            </p>
-          )}
-          <p className="mt-2 text-[12px] leading-snug text-white/60">
-            La IA solo identifica la pieza: no indica reparaciones y puede equivocarse. La foto no se guarda en ChaskiRepu.
-          </p>
         </div>
       ) : (
         <>
@@ -206,6 +168,51 @@ export function PanelPieza({ tipo, motor, zona, pieza, onPieza, onCerrar, hrefBa
           </ul>
           {compacto && elegida && <p className="mt-2 text-[12px] leading-snug text-white/75">{elegida.pista}</p>}
         </>
+      )}
+
+      {/* Identificación con IA: fuera del área con scroll, para que el botón y el resultado siempre se vean. */}
+      {modoFoto && (
+        <div className="mt-2 space-y-2">
+          <button
+            type="button"
+            onClick={identificar}
+            disabled={!archivo || analizando}
+            className="w-full rounded-xl border border-cian/60 bg-cian/15 px-4 py-2 text-[14px] font-semibold text-white transition hover:bg-cian/25 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {analizando ? "Analizando la foto..." : archivo ? "Identificar la pieza con IA" : "Elige una foto para identificarla con IA"}
+          </button>
+
+          {resultadoIA && (
+            <div role="status" className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[13px] leading-snug">
+              {resultadoIA.estado === "identificada" ? (
+                <>
+                  <p className="text-[15px] font-semibold">
+                    Parece: {resultadoIA.pieza}{" "}
+                    <span className="text-[12px] font-medium text-white/70">(confianza {resultadoIA.confianza})</span>
+                  </p>
+                  {resultadoIA.motivo && <p className="mt-0.5 text-white/75">{resultadoIA.motivo}</p>}
+                  {resultadoIA.aviso && <p className="mt-1 font-semibold text-ambar">{resultadoIA.aviso}</p>}
+                </>
+              ) : (
+                <>
+                  <p className="text-[15px] font-semibold">No estoy seguro de qué pieza es.</p>
+                  <p className="mt-0.5 text-white/75">
+                    Revisa que la zona elegida ({zona.label.toLowerCase()}) sea la correcta, prueba con otra foto más cercana o
+                    describe qué ves.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+          {errorIA && (
+            <p role="alert" className="rounded-xl border border-rojo/40 bg-rojo/15 px-3 py-2 text-[13px] font-medium">
+              {errorIA}
+            </p>
+          )}
+          <p className="text-[11px] leading-snug text-white/55">
+            La IA solo identifica la pieza, no indica reparaciones y puede equivocarse. La foto no se guarda en ChaskiRepu.
+          </p>
+        </div>
       )}
 
       <div className={`mt-2.5 gap-2 ${compacto ? "flex flex-wrap" : "space-y-2"}`}>
