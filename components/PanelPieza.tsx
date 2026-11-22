@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import type { ResultadoIA } from "@/lib/ia";
+import { reducirImagen } from "@/lib/imagen";
 import { piezasDe } from "@/lib/piezas";
 import type { TipoVehiculo, Zona } from "@/lib/tipos";
 
@@ -25,6 +27,10 @@ export function PanelPieza({ tipo, motor, zona, pieza, onPieza, onCerrar, hrefBa
   const [modoFoto, setModoFoto] = useState(false);
   const [foto, setFoto] = useState<string | null>(null);
   const [nota, setNota] = useState("");
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [analizando, setAnalizando] = useState(false);
+  const [resultadoIA, setResultadoIA] = useState<ResultadoIA | null>(null);
+  const [errorIA, setErrorIA] = useState("");
   const fotoActual = useRef<string | null>(null);
 
   useEffect(() => {
@@ -39,15 +45,46 @@ export function PanelPieza({ tipo, motor, zona, pieza, onPieza, onCerrar, hrefBa
   );
 
   function alElegirFoto(e: ChangeEvent<HTMLInputElement>) {
-    const archivo = e.target.files?.[0];
-    if (!archivo) return;
+    const elegido = e.target.files?.[0];
+    if (!elegido) return;
     if (foto) URL.revokeObjectURL(foto);
-    setFoto(URL.createObjectURL(archivo));
+    setFoto(URL.createObjectURL(elegido));
+    setArchivo(elegido);
+    setResultadoIA(null);
+    setErrorIA("");
+  }
+
+  /** Envía la foto (reducida) al servidor, que consulta la IA. La clave nunca llega al navegador. */
+  async function identificar() {
+    if (!archivo || analizando) return;
+    setAnalizando(true);
+    setErrorIA("");
+    setResultadoIA(null);
+    try {
+      const imagen = await reducirImagen(archivo);
+      const r = await fetch("/api/identificar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imagen, nota: nota.trim(), tipo, zona: zona.id, motor }),
+      });
+      const datos = (await r.json().catch(() => ({}))) as Partial<ResultadoIA> & { error?: string };
+      if (!r.ok) throw new Error(datos.error ?? "No pudimos identificar la pieza.");
+      setResultadoIA(datos as ResultadoIA);
+    } catch (e) {
+      setErrorIA(e instanceof Error ? e.message : "No pudimos identificar la pieza. Busca con una descripción.");
+    } finally {
+      setAnalizando(false);
+    }
   }
 
   const conTexto = (texto: string) => (texto ? `${hrefBase}&q=${encodeURIComponent(texto)}` : hrefBase);
   // Con una pieza elegida se envía también `pieza`, para que /buscar muestre solo esa pieza y no toda la zona.
-  const enlaceDeBusqueda = modoFoto ? conTexto(nota.trim()) : elegida ? `${conTexto(elegida.nombre)}&pieza=${encodeURIComponent(elegida.nombre)}` : hrefBase;
+  const piezaIA = resultadoIA?.estado === "identificada" ? resultadoIA.pieza : null;
+  const enlaceDeBusqueda = modoFoto
+    ? piezaIA
+      ? `${conTexto(piezaIA)}&pieza=${encodeURIComponent(piezaIA)}`
+      : conTexto(nota.trim())
+    : elegida ? `${conTexto(elegida.nombre)}&pieza=${encodeURIComponent(elegida.nombre)}` : hrefBase;
 
   const contenedor = compacto
     ? "vidrio aparecer pointer-events-auto absolute inset-x-3 bottom-3 flex max-h-[88%] flex-col rounded-2xl p-3.5 text-white"
@@ -97,8 +134,43 @@ export function PanelPieza({ tipo, motor, zona, pieza, onPieza, onCerrar, hrefBa
               />
             </label>
           </div>
+          <button
+            type="button"
+            onClick={identificar}
+            disabled={!archivo || analizando}
+            className="mt-2 rounded-xl border border-cian/60 bg-cian/15 px-4 py-2 text-[14px] font-semibold text-white transition hover:bg-cian/25 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {analizando ? "Analizando la foto..." : "Identificar la pieza con IA"}
+          </button>
+
+          {resultadoIA && (
+            <div role="status" className="mt-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-[13px] leading-snug">
+              {resultadoIA.estado === "identificada" ? (
+                <>
+                  <p className="text-[15px] font-semibold">
+                    Parece: {resultadoIA.pieza}{" "}
+                    <span className="text-[12px] font-medium text-white/70">(confianza {resultadoIA.confianza})</span>
+                  </p>
+                  {resultadoIA.motivo && <p className="mt-0.5 text-white/75">{resultadoIA.motivo}</p>}
+                  {resultadoIA.aviso && <p className="mt-1 font-semibold text-ambar">{resultadoIA.aviso}</p>}
+                </>
+              ) : (
+                <>
+                  <p className="text-[15px] font-semibold">No estoy seguro de qué pieza es.</p>
+                  <p className="mt-0.5 text-white/75">
+                    Prueba con otra foto más cercana o describe qué ves. Si no la encuentras, puedes pedirla a las tiendas.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+          {errorIA && (
+            <p role="alert" className="mt-2 rounded-xl border border-rojo/40 bg-rojo/15 px-3 py-2 text-[13px] font-medium">
+              {errorIA}
+            </p>
+          )}
           <p className="mt-2 text-[12px] leading-snug text-white/60">
-            La IA que reconoce la pieza por foto se conectará pronto. Por ahora buscamos con tu descripción y la zona.
+            La IA solo identifica la pieza: no indica reparaciones y puede equivocarse. La foto no se guarda en ChaskiRepu.
           </p>
         </div>
       ) : (
@@ -142,7 +214,11 @@ export function PanelPieza({ tipo, motor, zona, pieza, onPieza, onCerrar, hrefBa
           className={`boton-ambar block rounded-xl px-4 py-2.5 text-center text-[14px] font-semibold ${compacto ? "flex-1" : ""}`}
         >
           {modoFoto
-            ? "Buscar con mi descripción"
+            ? piezaIA
+              ? `Buscar ${piezaIA.toLowerCase()}`
+              : nota.trim()
+                ? "Buscar con mi descripción"
+                : `Ver repuestos de ${zona.label.toLowerCase()}`
             : elegida
               ? `Buscar ${elegida.nombre.toLowerCase()}`
               : `Ver repuestos de ${zona.label.toLowerCase()}`}
