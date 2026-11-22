@@ -23,7 +23,26 @@ interface Fila {
   codigo?: string | null;
   equivalencias?: string[] | null;
   sinonimos?: string[] | null;
-  proveedores?: Proveedor | null;
+  proveedores?: ProveedorFila | null;
+}
+
+/** Proveedor tal como está en Supabase (esquema actual: nombre_tienda, ubicacion_tienda, telefono). */
+interface ProveedorFila {
+  nombre_tienda: string | null;
+  ubicacion_tienda: string | null;
+  telefono: string | null;
+}
+
+function normalizarProveedor(p: ProveedorFila | null | undefined): Proveedor | null {
+  if (!p) return null;
+  return {
+    nombre: p.nombre_tienda ?? "Tienda",
+    direccion: p.ubicacion_tienda,
+    // La tabla todavía no guarda coordenadas; hasta agregarlas la distancia queda "por confirmar".
+    lat: null,
+    lng: null,
+    whatsapp: p.telefono,
+  };
 }
 
 function normalizar(f: Fila): Repuesto {
@@ -40,7 +59,7 @@ function normalizar(f: Fila): Repuesto {
     precio_bs: Number(f.precio ?? f.precio_bs ?? 0),
     stock: Number(f.stock ?? 0),
     tipo_vehiculo: f.tipo_vehiculo ?? "auto",
-    proveedores: f.proveedores ?? null,
+    proveedores: normalizarProveedor(f.proveedores),
   };
 }
 
@@ -54,7 +73,7 @@ export async function cargarRepuestos(incluirEjemplos = true): Promise<Resultado
   if (supabase) {
     const { data, error: err } = await supabase
       .from("repuestos")
-      .select("*, proveedores(nombre,direccion,lat,lng,whatsapp)");
+      .select("*, proveedores(nombre_tienda,ubicacion_tienda,telefono)");
     if (err) error = err.message;
     else {
       reales = ((data ?? []) as unknown as Fila[]).map(normalizar).sort((a, b) => a.precio_bs - b.precio_bs);
