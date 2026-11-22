@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Protegido } from "@/components/Protegido";
 import { RegistroRepuesto } from "@/components/RegistroRepuesto";
 
 export const metadata: Metadata = {
@@ -9,7 +10,9 @@ export const metadata: Metadata = {
 export default function PaginaRegistroRepuesto() {
   return (
     <main>
-      <RegistroRepuesto />
+      <Protegido rol="proveedor">
+        <RegistroRepuesto />
+      </Protegido>
     </main>
   );
 }

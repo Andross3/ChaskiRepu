@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { cerrarSesion, inicioDeRol } from "@/lib/auth";
+import { useSesion } from "@/lib/useSesion";
 import { Logo } from "./Logo";
 
 const ENLACES = [
@@ -12,6 +14,8 @@ const ENLACES = [
 
 export function Navbar() {
   const oscuro = usePathname() === "/";
+  const router = useRouter();
+  const sesion = useSesion();
 
   return (
     <header
@@ -35,7 +39,33 @@ export function Navbar() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          {!oscuro && (
+          {sesion.usuario && sesion.rol ? (
+            <>
+              <Link
+                href={inicioDeRol(sesion.rol)}
+                className={`hidden max-w-[160px] truncate rounded-xl px-3 py-2 text-[14px] font-semibold transition sm:inline-block ${
+                  oscuro ? "text-white hover:bg-white/10" : "text-marino hover:bg-arena"
+                }`}
+                title={sesion.rol === "proveedor" ? "Mi tienda" : "Mi área"}
+              >
+                {sesion.nombre ?? (sesion.rol === "proveedor" ? "Mi tienda" : "Mi cuenta")}
+              </Link>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await cerrarSesion();
+                  } finally {
+                    router.push("/");
+                  }
+                }}
+                className="rounded-xl boton-primario px-4 py-2 text-[14px] font-semibold"
+              >
+                Salir
+              </button>
+            </>
+          ) : (
+            !oscuro && (
             <>
               <Link
                 href="/entrar"
@@ -47,6 +77,7 @@ export function Navbar() {
                 Crear cuenta
               </Link>
             </>
+            )
           )}
         </div>
       </div>
