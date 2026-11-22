@@ -32,6 +32,27 @@ function puntaje(r: Repuesto, q: string): number {
   return palabras.filter((p) => texto.includes(p.length > 5 ? p.slice(0, p.length - 1) : p)).length;
 }
 
+/** Palabra en singular y sin tildes: "Pastillas" y "pastilla" quedan iguales. */
+const raiz = (p: string) => (p.length > 3 && p.endsWith("s") ? p.slice(0, -1) : p);
+
+const palabrasDe = (s: string) =>
+  normalizar(s)
+    .split(/[^a-z0-9]+/)
+    .filter((p) => p.length >= 3 && !PALABRAS_VACIAS.has(p))
+    .map(raiz);
+
+/**
+ * Coincidencia estricta con una pieza elegida (por ejemplo "Pastillas de freno"):
+ * TODAS sus palabras deben estar en el nombre o los sinónimos del repuesto.
+ * No mira la categoría, para que "Llanta" no traiga todo lo de la zona de llantas.
+ */
+function coincidePieza(r: Repuesto, pieza: string): boolean {
+  const buscadas = palabrasDe(pieza);
+  if (buscadas.length === 0) return true;
+  const del = new Set(palabrasDe([r.nombre, ...(r.sinonimos ?? []), ...(r.equivalencias ?? [])].join(" ")));
+  return buscadas.every((p) => del.has(p));
+}
+
 export function BuscarCliente() {
   const sp = useSearchParams();
   const tipoInicial = (sp.get("tipo") as TipoVehiculo | null) ?? null;
@@ -47,6 +68,8 @@ export function BuscarCliente() {
   const [error, setError] = useState<string | undefined>();
 
   const [q, setQ] = useState(sp.get("q") ?? "");
+  // Pieza elegida en el panel del vehículo. Si la persona edita el texto, se vuelve a la búsqueda libre.
+  const [pieza, setPieza] = useState<string | null>(sp.get("pieza"));
   const [tipo, setTipo] = useState<"todos" | TipoVehiculo>(tipoInicial ?? "todos");
   const [zona, setZona] = useState<string | null>(zonaInicial);
   const [conds, setConds] = useState<string[]>([]);
@@ -80,26 +103,37 @@ export function BuscarCliente() {
     return zonasDe(base).find((z) => z.id === zona) ?? null;
   }, [zona, tipo]);
 
-  const lista = useMemo(() => {
-    const base = (items ?? []).filter((r) => {
-      if (!ejemplos && r.ejemplo) return false;
-      if (tipo !== "todos" && r.tipo_vehiculo !== tipo) return false;
-      if (zonaInfo && !zonaInfo.categorias.some((c) => c.toLowerCase() === r.categoria.toLowerCase())) return false;
-      if (medida && r.categoria.toLowerCase() === "llantas" && !soloMedida(r.nombre).includes(soloMedida(medida))) return false;
-      if (conds.length && !conds.includes(r.condicion.toLowerCase())) return false;
-      if (r.precio_bs > maxActual) return false;
-      if (soloStock && r.stock <= 0) return false;
-      return puntaje(r, q.trim()) > 0;
-    });
+  const { lista, sinExactos } = useMemo(() => {
+    // "estricta": solo la pieza elegida · "libre": búsqueda por texto · "zona": toda la zona, sin mirar el texto.
+    const filtrar = (modo: "estricta" | "libre" | "zona") =>
+      (items ?? []).filter((r) => {
+        if (!ejemplos && r.ejemplo) return false;
+        if (tipo !== "todos" && r.tipo_vehiculo !== tipo) return false;
+        if (zonaInfo && !zonaInfo.categorias.some((c) => c.toLowerCase() === r.categoria.toLowerCase())) return false;
+        if (medida && r.categoria.toLowerCase() === "llantas" && !soloMedida(r.nombre).includes(soloMedida(medida))) return false;
+        if (conds.length && !conds.includes(r.condicion.toLowerCase())) return false;
+        if (r.precio_bs > maxActual) return false;
+        if (soloStock && r.stock <= 0) return false;
+        if (modo === "zona") return true;
+        if (modo === "estricta" && pieza) return coincidePieza(r, pieza);
+        return puntaje(r, q.trim()) > 0;
+      });
+
+    let base = filtrar(pieza ? "estricta" : "libre");
+    // Si nadie publicó esa pieza exacta, se muestra el resto de la zona y se avisa.
+    const sinExactos = items !== null && Boolean(pieza) && base.length === 0;
+    if (sinExactos) base = filtrar("zona");
+
     const texto = q.trim();
-    return [...base].sort((a, b) => {
-      if (texto) {
+    const ordenada = [...base].sort((a, b) => {
+      if (texto && !pieza) {
         const d = puntaje(b, texto) - puntaje(a, texto);
         if (d !== 0) return d;
       }
       return orden === "caro" ? b.precio_bs - a.precio_bs : a.precio_bs - b.precio_bs;
     });
-  }, [items, ejemplos, tipo, zonaInfo, medida, conds, maxActual, soloStock, q, orden]);
+    return { lista: ordenada, sinExactos };
+  }, [items, ejemplos, tipo, zonaInfo, medida, conds, maxActual, soloStock, q, pieza, orden]);
 
   const alternar = (c: string) => setConds((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]));
   const hayFiltros = conds.length > 0 || zona !== null || tipo !== "todos" || precioMax !== null || q !== "";
@@ -109,6 +143,7 @@ export function BuscarCliente() {
     setTipo("todos");
     setPrecioMax(null);
     setQ("");
+    setPieza(null);
   };
 
   return (
@@ -134,7 +169,10 @@ export function BuscarCliente() {
           <div className="mt-5 flex max-w-2xl items-center gap-2 rounded-2xl border border-linea bg-white p-1.5 sombra-suave">
             <input
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setPieza(null);
+              }}
               placeholder="Nombre, código o descripción: pastillas, batería, filtro..."
               aria-label="Buscar repuesto"
               className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-[16px] font-medium text-marino outline-none placeholder:text-ink-2"
@@ -258,7 +296,24 @@ export function BuscarCliente() {
                 Zona: {zonaInfo.label} ✕
               </button>
             )}
+            {pieza && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPieza(null);
+                  setQ("");
+                }}
+                className="rounded-full border border-linea bg-azul-suave px-3 py-1 text-[13px] font-semibold"
+              >
+                Pieza: {pieza} ✕
+              </button>
+            )}
           </div>
+          {sinExactos && pieza && (
+            <p className="mt-3 rounded-xl border border-linea bg-ambar-suave px-4 py-2 text-[14px] font-semibold">
+              Todavía nadie publicó «{pieza}». Te mostramos el resto de la zona; también puedes pedirla a las tiendas.
+            </p>
+          )}
           {items && (
             <p className="mt-1 text-[13px] text-ink-2">
               {reales} reales de la base de datos{ejemplos ? " + ejemplos para ver el diseño" : ""}.
