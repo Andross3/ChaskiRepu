@@ -31,6 +31,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { registrarProveedor } from "@/services/proveedor";
+import { toast } from "@/components/ui/toast";
 
 type Campos = {
   nombre: string;
@@ -78,6 +80,8 @@ export function RegistroProveedor() {
   const [acepta, setAcepta] = useState(false);
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [enviado, setEnviado] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [requiereConfirmacion, setRequiereConfirmacion] = useState(false);
 
   function actualizar(campo: keyof Campos, valor: string) {
     setDatos((prev) => ({ ...prev, [campo]: valor }));
@@ -107,12 +111,49 @@ export function RegistroProveedor() {
     return nuevos;
   }
 
-  function enviar(e: FormEvent<HTMLFormElement>) {
+  async function enviar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     const nuevos = validar();
     setErrores(nuevos);
+
     if (Object.keys(nuevos).length > 0) return;
-    setEnviado(true);
+
+    try {
+      setCargando(true);
+
+      const resultado = await registrarProveedor({
+        nombre: datos.nombre,
+        correo: datos.correo,
+        contrasena: datos.contrasena,
+        telefono: datos.telefono,
+        tienda: datos.tienda,
+        ubicacion: datos.ubicacion,
+      });
+
+      setRequiereConfirmacion(resultado.requiereConfirmacion);
+      setEnviado(true);
+      toast.add({
+        type: "success",
+        title: "Registro completado",
+        description: resultado.requiereConfirmacion
+          ? "Revisa tu correo para confirmar la cuenta."
+          : "Tu cuenta de proveedor ya está lista.",
+      });
+
+    } catch (error) {
+      const mensaje =
+        error instanceof Error
+          ? error.message
+          : "Ocurrió un error durante el registro.";
+      toast.add({
+        type: "error",
+        title: "No se pudo completar el registro",
+        description: mensaje,
+      });
+    } finally {
+      setCargando(false);
+    }
   }
 
   function reiniciar() {
@@ -155,8 +196,7 @@ export function RegistroProveedor() {
           <div className="relative mt-8 flex items-start gap-3 rounded-2xl bg-white/10 p-4 ring-1 ring-white/20">
             <ShieldCheck className="mt-0.5 size-5 shrink-0 text-sky-200" />
             <p className="text-[13px] leading-relaxed text-blue-50/90">
-              Tus datos se usan solo para validar tu tienda. Esta es una vista provisional: todavía no se guarda
-              información en la base de datos.
+              Tus datos se usan para crear tu cuenta de proveedor y registrar la información de tu tienda.
             </p>
           </div>
         </aside>
@@ -168,7 +208,9 @@ export function RegistroProveedor() {
             </CardTitle>
             <CardDescription className="text-[15px] text-slate-500">
               {enviado
-                ? "Revisa tus datos y continúa para empezar a publicar."
+                ? requiereConfirmacion
+                  ? "Confirma tu correo electrónico para activar la cuenta."
+                  : "Tu cuenta ya está creada y puedes continuar."
                 : "Completa los datos de tu cuenta y de tu tienda."}
             </CardDescription>
           </CardHeader>
@@ -182,8 +224,8 @@ export function RegistroProveedor() {
                 <div>
                   <p className="text-lg font-semibold text-slate-900">Gracias, {datos.nombre.split(" ")[0] || "proveedor"}.</p>
                   <p className="mt-1 max-w-sm text-[15px] leading-relaxed text-slate-500">
-                    Registramos tu tienda <span className="font-semibold text-slate-700">{datos.tienda}</span> en modo
-                    demostración. Todavía no se envía nada a la base de datos.
+                    Registramos tu tienda <span className="font-semibold text-slate-700">{datos.tienda}</span>.
+                    {requiereConfirmacion && " Revisa tu correo para confirmar la cuenta."}
                   </p>
                 </div>
                 <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
@@ -409,10 +451,11 @@ export function RegistroProveedor() {
                 <div className="sm:col-span-2">
                   <Button
                     type="submit"
+                    disabled={cargando}
                     className="h-12 w-full rounded-xl bg-blue-600 text-[15px] font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700"
                   >
-                    Crear cuenta de proveedor
-                    <ArrowRight className="size-4" />
+                    {cargando ? "Creando cuenta..." : "Crear cuenta de proveedor"}
+                    {!cargando && <ArrowRight className="size-4" />}
                   </Button>
                   <p className="mt-3 text-center text-[13px] text-slate-500">
                     ¿Ya tienes una cuenta?{" "}

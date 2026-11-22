@@ -12,13 +12,13 @@ import {
   type KeyboardEvent,
 } from "react";
 import {
-  ArrowLeft,
+  AlertCircle,
   ArrowRight,
   BadgeCheck,
   Bike,
-  Boxes,
   Camera,
   Car,
+  Calendar,
   Check,
   CircleDollarSign,
   Cog,
@@ -41,8 +41,32 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  crearRepuesto,
+  obtenerUrlImagen,
+  type Repuesto,
+  type CondicionRepuesto,
+} from "@/services/repuesto";
 
-type Condicion = "nuevo" | "usado" | "reacondicionado";
 type TipoVehiculo = "auto" | "moto";
 type Sistema =
   | "motor"
@@ -73,9 +97,10 @@ type Foto = {
   id: string;
   url: string;
   nombre: string;
+  archivo?: File;
 };
 
-const CONDICIONES: { id: Condicion; titulo: string; texto: string; icono: LucideIcon }[] = [
+const CONDICIONES: { id: CondicionRepuesto; titulo: string; texto: string; icono: LucideIcon }[] = [
   { id: "nuevo", titulo: "Repuesto Nuevo", texto: "Sin uso, listo para instalar", icono: Sparkles },
   { id: "usado", titulo: "Repuesto Usado", texto: "Con señales normales de uso", icono: Wrench },
   { id: "reacondicionado", titulo: "Repuesto Reacondicionado", texto: "Restaurado y probado", icono: ShieldCheck },
@@ -109,16 +134,12 @@ const MARCAS: { id: MarcaId; nombre: string }[] = [
   { id: "volkswagen", nombre: "Volkswagen" },
 ];
 
-const bloque =
-  "rounded-3xl border border-blue-100/80 bg-white p-5 shadow-[0_1px_2px_rgba(26,19,64,0.04),0_18px_40px_-28px_rgba(37,99,235,0.35)] sm:p-6";
-const etiqueta = "block text-[12px] font-semibold uppercase tracking-wider text-ink-2";
-const campo =
-  "mt-2 w-full rounded-xl border border-linea bg-white px-4 py-3.5 text-[15px] font-medium text-marino outline-none transition placeholder:text-ink-2/50 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15";
-
 export function RegistroRepuesto() {
   const [nombre, setNombre] = useState("");
+  const [modelo, setModelo] = useState("");
+  const [ano, setAno] = useState("");
   const [tipoVehiculo, setTipoVehiculo] = useState<TipoVehiculo>("auto");
-  const [condicion, setCondicion] = useState<Condicion>("nuevo");
+  const [condicion, setCondicion] = useState<CondicionRepuesto>("nuevo");
   const [sistema, setSistema] = useState<Sistema>("motor");
   const [marcas, setMarcas] = useState<MarcaId[]>([]);
   const [precio, setPrecio] = useState("");
@@ -126,12 +147,14 @@ export function RegistroRepuesto() {
   const [fotos, setFotos] = useState<Foto[]>([]);
   const [arrastrando, setArrastrando] = useState<number | null>(null);
   const [intento, setIntento] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [errorServidor, setErrorServidor] = useState<string | null>(null);
+  const [repuestoGuardado, setRepuestoGuardado] = useState<Repuesto | null>(null);
   const [enviado, setEnviado] = useState(false);
 
   const formRef = useRef<HTMLFormElement>(null);
   const inputFotos = useRef<Array<HTMLInputElement | null>>([]);
   const fotosRef = useRef<Foto[]>([]);
-  const ayudaFotosId = useId();
   const idCondicion = useId();
   const idSistema = useId();
 
@@ -166,6 +189,7 @@ export function RegistroRepuesto() {
       id: crypto.randomUUID(),
       url: URL.createObjectURL(archivo),
       nombre: archivo.name,
+      archivo,
     };
 
     setFotos((actuales) => {
@@ -254,6 +278,8 @@ export function RegistroRepuesto() {
     fotosRef.current.forEach((foto) => URL.revokeObjectURL(foto.url));
     setFotos([]);
     setNombre("");
+    setModelo("");
+    setAno("");
     setTipoVehiculo("auto");
     setCondicion("nuevo");
     setSistema("motor");
@@ -261,13 +287,17 @@ export function RegistroRepuesto() {
     setPrecio("");
     setStock("1");
     setIntento(false);
+    setGuardando(false);
+    setErrorServidor(null);
+    setRepuestoGuardado(null);
     setEnviado(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function alEnviar(e: FormEvent<HTMLFormElement>) {
+  async function alEnviar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIntento(true);
+    setErrorServidor(null);
 
     if (!nombre.trim()) {
       document.getElementById("nombre-pieza")?.focus();
@@ -284,613 +314,827 @@ export function RegistroRepuesto() {
       return;
     }
 
-    setEnviado(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    try {
+      setGuardando(true);
+
+      const archivos = fotos
+        .map((f) => f.archivo)
+        .filter((f): f is File => f instanceof File);
+
+      const resultado = await crearRepuesto({
+        nombre: nombre.trim(),
+        categoria: sistemaActivo?.nombre || sistema,
+        condicion: condicion,
+        compatibilidad: [nombresMarcas.join(", "), modelo.trim(), ano.trim()]
+          .filter(Boolean)
+          .join(" · "),
+        precio: precioNumero,
+        stock: stockNumero,
+        modelo: modelo.trim(),
+        ano_repuesto: ano.trim(),
+        imagenes: archivos,
+      });
+
+      setRepuestoGuardado(resultado);
+      setEnviado(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err: unknown) {
+      console.error("Error al registrar repuesto con Supabase:", err);
+      const mensaje =
+        err instanceof Error
+          ? err.message
+          : "Ocurrió un error inesperado al conectar con Supabase.";
+      setErrorServidor(mensaje);
+    } finally {
+      setGuardando(false);
+    }
   }
 
   if (enviado) {
+    const urlFotoPrincipal =
+      repuestoGuardado?.imagenes && repuestoGuardado.imagenes.length > 0
+        ? obtenerUrlImagen(repuestoGuardado.imagenes[0])
+        : fotos[0]?.url;
+
     return (
-      <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6">
-        <div className="rounded-[2rem] border border-blue-100 bg-white p-6 text-center shadow-[0_2px_4px_rgba(26,19,64,0.04),0_28px_60px_-18px_rgba(37,99,235,0.35)] sm:p-9">
-          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-600 ring-8 ring-blue-50/60">
-            <Check size={30} strokeWidth={3} />
-          </span>
-          <h1 className="mt-5 font-display text-3xl font-semibold text-marino">Repuesto registrado</h1>
-          <p className="mt-2 text-[15px] text-ink-2">
-            Modo demostración: el repuesto no se guarda en la base de datos. Así se vería en tu inventario.
-          </p>
+      <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6 font-sans">
+        <Card className="rounded-3xl border border-blue-200 bg-white p-6 sm:p-9 text-center shadow-xl">
+          <CardHeader className="p-0 flex flex-col items-center">
+            <span className="flex size-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60 mb-4">
+              <Check className="size-8 stroke-[2.5]" />
+            </span>
+            <CardTitle className="text-3xl font-bold text-slate-900 tracking-tight font-sans">
+              ¡Repuesto guardado exitosamente!
+            </CardTitle>
+            <CardDescription className="text-sm text-slate-500 mt-2 max-w-md font-sans">
+              El repuesto ha sido registrado en la base de datos de Supabase y sus imágenes han sido almacenadas en el Storage.
+            </CardDescription>
+            {repuestoGuardado?.id && (
+              <Badge variant="outline" className="mt-3 font-mono text-[11px] text-slate-500 border-slate-200">
+                ID: {repuestoGuardado.id}
+              </Badge>
+            )}
+          </CardHeader>
 
-          <div className="mt-6 rounded-2xl border border-linea bg-hielo p-4 text-left">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 ring-1 ring-blue-100">
-                <Package size={20} />
-              </span>
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-marino">{nombre}</p>
-                <p className="text-[12px] text-ink-2">
-                  {condicionActiva?.titulo} · {sistemaActivo?.nombre} · {tipoVehiculo === "auto" ? "Auto" : "Moto"}
-                </p>
+          <CardContent className="p-0 mt-6">
+            <div className="rounded-2xl border border-blue-100 bg-slate-50/80 p-5 text-left space-y-4">
+              <div className="flex items-start gap-3.5">
+                {urlFotoPrincipal ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={urlFotoPrincipal}
+                    alt={nombre}
+                    className="size-14 rounded-xl object-cover border border-slate-200 shadow-xs"
+                  />
+                ) : (
+                  <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                    <Package className="size-7" />
+                  </span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-bold text-slate-900 text-lg">{nombre}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {condicionActiva?.titulo} · {sistemaActivo?.nombre} · {tipoVehiculo === "auto" ? "Auto" : "Moto"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Nuevos campos mostrados: Modelo y Año */}
+              {(modelo || ano) && (
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/80 text-xs text-slate-700">
+                  {modelo && (
+                    <div className="flex items-center gap-1.5 bg-white p-2 rounded-lg border border-slate-200/60">
+                      <Car className="size-3.5 text-blue-600 shrink-0" />
+                      <span className="text-slate-400">Modelo:</span>
+                      <span className="font-semibold text-slate-900 truncate">{modelo}</span>
+                    </div>
+                  )}
+                  {ano && (
+                    <div className="flex items-center gap-1.5 bg-white p-2 rounded-lg border border-slate-200/60">
+                      <Calendar className="size-3.5 text-blue-600 shrink-0" />
+                      <span className="text-slate-400">Año:</span>
+                      <span className="font-semibold text-slate-900 truncate">{ano}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {nombresMarcas.map((marca) => (
+                  <Badge
+                    key={marca}
+                    variant="secondary"
+                    className="bg-white text-blue-700 border border-blue-200 font-semibold px-2.5 py-0.5"
+                  >
+                    {marca}
+                  </Badge>
+                ))}
+              </div>
+
+              <Separator className="bg-slate-200" />
+
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Precio</p>
+                  <p className="text-2xl font-extrabold text-blue-900">
+                    Bs {precioNumero.toLocaleString("es-BO")}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Stock</p>
+                  <p className="text-sm font-bold text-slate-700">{stockNumero} unidades</p>
+                </div>
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {nombresMarcas.map((marca) => (
-                <span
-                  key={marca}
-                  className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-100"
-                >
-                  {marca}
-                </span>
-              ))}
-            </div>
-            <div className="mt-4 flex items-end justify-between border-t border-linea pt-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2">Precio</p>
-                <p className="font-display text-2xl font-semibold text-marino">
-                  Bs {precioNumero.toLocaleString("es-BO")}
-                </p>
-              </div>
-              <p className="text-[13px] font-semibold text-ink-2">{stockNumero} unidades</p>
-            </div>
-          </div>
+          </CardContent>
 
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <button
+          <CardFooter className="p-0 mt-6 flex flex-wrap justify-center gap-3">
+            <Button
               type="button"
+              variant="outline"
               onClick={reiniciar}
-              className="rounded-xl border border-linea bg-white px-5 py-3 text-[15px] font-semibold text-marino transition hover:bg-blue-50"
+              className="rounded-xl border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold px-5"
             >
-              Registrar otro
-            </button>
-            <Link href="/" className="rounded-xl boton-primario px-5 py-3 text-[15px] font-semibold">
-              Volver al inicio
-            </Link>
-          </div>
-        </div>
+              Registrar otro repuesto
+            </Button>
+            <Button
+              render={<Link href="/catalogo" />}
+              className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 shadow-md shadow-blue-500/20"
+            >
+              Ver en catálogo
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-2 text-[14px] font-semibold text-marino underline-offset-4 hover:underline"
-      >
-        <ArrowLeft size={16} />
-        Volver
-      </Link>
+    <TooltipProvider>
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-10 font-sans">
+        {/* Header Superior */}
+        <header className="relative overflow-hidden rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-950 p-6 sm:p-8 text-white shadow-lg">
+          <div className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-blue-400/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 left-1/3 size-48 rounded-full bg-sky-400/15 blur-3xl" />
+          <div className="relative">
+            <Badge className="bg-blue-500/30 text-blue-100 border-white/20 mb-3 text-xs font-semibold">
+              Gestión de Inventario · Conexión Supabase
+            </Badge>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white font-sans">
+              Nuevo Repuesto
+            </h1>
+            <p className="mt-2 max-w-2xl text-base text-blue-100/90 leading-relaxed font-sans">
+              Registra la pieza, sus fotos, modelo, año y compatibilidad para que se guarde directamente en el catálogo.
+            </p>
+          </div>
+        </header>
 
-      <header className="relative mt-4 overflow-hidden rounded-[2rem] border border-blue-100 bg-linear-to-br from-blue-50 via-white to-sky-50 p-6 sm:p-8">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-sky-400/10 blur-3xl" />
-        <div className="relative">
-          <p className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/80 px-3 py-1 text-[12px] font-semibold text-blue-700">
-            <Boxes size={14} />
-            Inventario
-          </p>
-          <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight text-marino sm:text-5xl">
-            Nuevo Repuesto
-          </h1>
-          <p className="mt-3 max-w-2xl text-[16px] text-ink-2">
-            Registra la pieza, sus fotos y la compatibilidad para que los clientes la encuentren sin dar vueltas.
-          </p>
-        </div>
-      </header>
-
-      <form
-        ref={formRef}
-        onSubmit={alEnviar}
-        onKeyDown={alPresionarEnter}
-        className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]"
-      >
-        <div className="space-y-6">
-          <section className={bloque}>
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <Package size={20} />
-              </span>
-              <div>
-                <h2 className="font-display text-xl font-semibold text-marino">Datos de la pieza</h2>
-                <p className="text-[13px] text-ink-2">Empieza con el nombre y el tipo de vehículo.</p>
-              </div>
-            </div>
-
-            <label htmlFor="nombre-pieza" className={`${etiqueta} mt-5`}>
-              Nombre de pieza
-            </label>
-            <div className="relative">
-              <Wrench
-                size={18}
-                className="pointer-events-none absolute left-4 top-1/2 mt-1 -translate-y-1/2 text-ink-2/60"
-              />
-              <input
-                id="nombre-pieza"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                aria-invalid={errorNombre}
-                className={`${campo} pl-11`}
-                placeholder="Ej. Pastillas de freno delanteras"
-                autoComplete="off"
-              />
-            </div>
-            {errorNombre && <p className="mt-1.5 text-[12px] font-medium text-rojo">Escribe el nombre de la pieza.</p>}
-
-            <p className={`${etiqueta} mt-5`}>Tipo de vehículo</p>
-            <div
-              role="radiogroup"
-              aria-label="Tipo de vehículo"
-              className="mt-2 grid grid-cols-2 gap-2.5"
-              onKeyDown={(e) => navegarRadios(e, ["auto", "moto"] as const, tipoVehiculo, setTipoVehiculo)}
-            >
-              {(["auto", "moto"] as const).map((tipo) => {
-                const activo = tipoVehiculo === tipo;
-                const Icono = tipo === "auto" ? Car : Bike;
-                return (
-                  <button
-                    key={tipo}
-                    type="button"
-                    role="radio"
-                    aria-checked={activo}
-                    onClick={() => setTipoVehiculo(tipo)}
-                    className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${
-                      activo
-                        ? "border-blue-500 bg-blue-50 text-blue-700 ring-4 ring-blue-500/10"
-                        : "border-linea bg-white text-marino hover:border-blue-300 hover:bg-blue-50/40"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                        activo ? "bg-blue-600 text-white" : "bg-hielo text-blue-600"
-                      }`}
-                    >
-                      <Icono size={18} />
-                    </span>
-                    <span className="text-[14px] font-semibold">{tipo === "auto" ? "Auto" : "Moto"}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className={bloque}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                  <Camera size={20} />
-                </span>
-                <div>
-                  <h2 className="font-display text-xl font-semibold text-marino">Fotos del repuesto</h2>
-                  <p className="text-[13px] text-ink-2">Muestra la pieza desde distintos ángulos.</p>
+        <form
+          ref={formRef}
+          onSubmit={alEnviar}
+          onKeyDown={alPresionarEnter}
+          className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]"
+        >
+          <div className="space-y-6">
+            {/* SECCIÓN 1: DATOS DE LA PIEZA (Incluye Nombre, Modelo y Año) */}
+            <Card className="rounded-3xl border border-blue-100/80 bg-white shadow-sm overflow-hidden">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                    <Package className="size-5" />
+                  </span>
+                  <div>
+                    <CardTitle className="text-xl font-bold text-slate-900 font-sans">
+                      Datos de la pieza
+                    </CardTitle>
+                    <CardDescription className="text-xs text-slate-500 font-sans">
+                      Nombre del repuesto, modelo compatible y año de aplicación.
+                    </CardDescription>
+                  </div>
                 </div>
-              </div>
-              <div className="group relative shrink-0">
-                <button
-                  type="button"
-                  aria-describedby={ayudaFotosId}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-blue-600 transition hover:bg-blue-100"
-                >
-                  <Info size={17} />
-                </button>
-                <span
-                  id={ayudaFotosId}
-                  role="tooltip"
-                  className="pointer-events-none absolute right-0 top-11 z-20 w-56 rounded-xl bg-marino px-3 py-2 text-[12px] font-medium leading-snug text-white opacity-0 shadow-lg transition group-hover:opacity-100 group-focus-within:opacity-100"
-                >
-                  Puedes subir hasta 3 fotos. La primera será la principal.
-                </span>
-              </div>
-            </div>
+              </CardHeader>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              {[0, 1, 2].map((indice) => {
-                const foto = fotos[indice];
-                const activo = arrastrando === indice;
-                return (
-                  <div
-                    key={indice}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDragEnter={() => setArrastrando(indice)}
-                    onDragLeave={() => setArrastrando((actual) => (actual === indice ? null : actual))}
-                    onDrop={(e) => alSoltarFoto(e, indice)}
-                    className={`relative aspect-[4/3] overflow-hidden rounded-2xl border transition ${
-                      activo
-                        ? "border-blue-500 bg-blue-50 ring-4 ring-blue-500/15"
-                        : foto
-                          ? "border-linea bg-hielo"
-                          : "border-dashed border-blue-200 bg-blue-50/60 hover:border-blue-400 hover:bg-blue-50"
-                    }`}
-                  >
-                    <input
-                      ref={(elemento) => {
-                        inputFotos.current[indice] = elemento;
-                      }}
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => alElegirFoto(e, indice)}
-                      className="sr-only"
-                      aria-label={`Subir foto ${indice + 1}`}
+              <CardContent className="space-y-4 pt-0">
+                {/* Nombre de la pieza */}
+                <div className="space-y-2">
+                  <Label htmlFor="nombre-pieza" className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                    Nombre de pieza <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Wrench className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                    <Input
+                      id="nombre-pieza"
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      aria-invalid={errorNombre}
+                      className="pl-10 h-11 rounded-xl border-slate-200 bg-white text-sm focus-visible:border-blue-500 focus-visible:ring-blue-500/20"
+                      placeholder="Ej. Pastillas de freno delanteras, Bomba de agua, Amortiguador"
+                      autoComplete="off"
                     />
+                  </div>
+                  {errorNombre && (
+                    <p className="text-xs font-medium text-red-600 mt-1">Escribe el nombre de la pieza.</p>
+                  )}
+                </div>
 
-                    {foto ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={foto.url}
-                          alt={`Vista previa de ${foto.nombre}`}
-                          className="h-full w-full object-cover"
+                {/* 2 CAMPOS ADICIONALES REQUERIDOS: MODELO Y AÑO */}
+                <div className="grid gap-4 sm:grid-cols-2 pt-1">
+                  {/* Campo Modelo */}
+                  <div className="space-y-2">
+                    <Label htmlFor="modelo-repuesto" className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Modelo del repuesto / vehículo
+                    </Label>
+                    <div className="relative">
+                      <Car className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                      <Input
+                        id="modelo-repuesto"
+                        value={modelo}
+                        onChange={(e) => setModelo(e.target.value)}
+                        className="pl-10 h-11 rounded-xl border-slate-200 bg-white text-sm focus-visible:border-blue-500 focus-visible:ring-blue-500/20"
+                        placeholder="Ej. Hilux, Corolla, Sentra, Tucson, Duster"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-400">Modelo vehicular específico al que aplica.</p>
+                  </div>
+
+                  {/* Campo Año */}
+                  <div className="space-y-2">
+                    <Label htmlFor="ano-repuesto" className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Año del repuesto / vehículo
+                    </Label>
+                    <div className="relative">
+                      <Calendar className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                      <Input
+                        id="ano-repuesto"
+                        value={ano}
+                        onChange={(e) => setAno(e.target.value)}
+                        className="pl-10 h-11 rounded-xl border-slate-200 bg-white text-sm focus-visible:border-blue-500 focus-visible:ring-blue-500/20"
+                        placeholder="Ej. 2018 - 2024 o 2022"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-400">Año o intervalo de años de compatibilidad.</p>
+                  </div>
+                </div>
+
+              </CardContent>
+            </Card>
+
+            {/* SECCIÓN 2: FOTOS DEL REPUESTO */}
+            <Card className="rounded-3xl border border-blue-100/80 bg-white shadow-sm overflow-hidden">
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                      <Camera className="size-5" />
+                    </span>
+                    <div>
+                      <CardTitle className="text-xl font-bold text-slate-900 font-sans">
+                        Fotos del repuesto
+                      </CardTitle>
+                      <CardDescription className="text-xs text-slate-500 font-sans">
+                        Se subirán al Storage de Supabase en la carpeta del repuesto.
+                      </CardDescription>
+                    </div>
+                  </div>
+
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-full border border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100"
                         />
-                        <div className="absolute inset-x-0 top-0 flex justify-end gap-1.5 p-2">
+                      }
+                    >
+                      <Info className="size-4" />
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-slate-900 text-white text-xs p-2 rounded-lg">
+                      Puedes subir hasta 3 fotos. La primera será la principal.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </CardHeader>
+
+              <CardContent className="pt-0">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {[0, 1, 2].map((indice) => {
+                    const foto = fotos[indice];
+                    const activo = arrastrando === indice;
+                    return (
+                      <div
+                        key={indice}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDragEnter={() => setArrastrando(indice)}
+                        onDragLeave={() => setArrastrando((actual) => (actual === indice ? null : actual))}
+                        onDrop={(e) => alSoltarFoto(e, indice)}
+                        className={`relative aspect-[4/3] overflow-hidden rounded-2xl border transition ${
+                          activo
+                            ? "border-blue-500 bg-blue-50 ring-4 ring-blue-500/15"
+                            : foto
+                              ? "border-slate-200 bg-slate-50"
+                              : "border-dashed border-blue-200 bg-blue-50/50 hover:border-blue-400 hover:bg-blue-50"
+                        }`}
+                      >
+                        <input
+                          ref={(elemento) => {
+                            inputFotos.current[indice] = elemento;
+                          }}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => alElegirFoto(e, indice)}
+                          className="sr-only"
+                          aria-label={`Subir foto ${indice + 1}`}
+                        />
+
+                        {foto ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={foto.url}
+                              alt={`Vista previa de ${foto.nombre}`}
+                              className="size-full object-cover"
+                            />
+                            <div className="absolute inset-x-0 top-0 flex justify-end gap-1.5 p-2">
+                              <button
+                                type="button"
+                                onClick={() => inputFotos.current[indice]?.click()}
+                                aria-label={`Cambiar foto ${indice + 1}`}
+                                className="flex size-7 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-sm backdrop-blur hover:bg-white transition"
+                              >
+                                <Camera className="size-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => quitarFoto(indice)}
+                                aria-label={`Quitar foto ${indice + 1}`}
+                                className="flex size-7 items-center justify-center rounded-full bg-white/90 text-red-600 shadow-sm backdrop-blur hover:bg-white transition"
+                              >
+                                <Trash className="size-3.5" />
+                              </button>
+                            </div>
+                            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/85 to-transparent px-2.5 pb-2 pt-6 text-[11px] font-semibold text-white">
+                              Foto {indice + 1}
+                              {indice === 0 ? " · Principal" : ""}
+                            </span>
+                          </>
+                        ) : (
                           <button
                             type="button"
                             onClick={() => inputFotos.current[indice]?.click()}
-                            aria-label={`Cambiar foto ${indice + 1}`}
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-marino shadow-sm backdrop-blur transition hover:bg-white"
+                            className="flex size-full flex-col items-center justify-center gap-1.5 text-blue-700 p-3"
                           >
-                            <Camera size={14} />
+                            <span className="flex size-10 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm border border-blue-100">
+                              <ImagePlus className="size-5" />
+                            </span>
+                            <span className="text-xs font-semibold">Foto {indice + 1}</span>
+                            <span className="text-[10px] text-slate-400">
+                              {indice === 0 ? "Principal" : "Opcional"}
+                            </span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => quitarFoto(indice)}
-                            aria-label={`Quitar foto ${indice + 1}`}
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-rojo shadow-sm backdrop-blur transition hover:bg-white"
-                          >
-                            <Trash size={14} />
-                          </button>
-                        </div>
-                        <span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-marino/85 to-transparent px-2.5 pb-2 pt-6 text-[11px] font-semibold text-white">
-                          Foto {indice + 1}
-                          {indice === 0 ? " · Principal" : ""}
-                        </span>
-                      </>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => inputFotos.current[indice]?.click()}
-                        className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-blue-700"
-                      >
-                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm">
-                          <ImagePlus size={19} />
-                        </span>
-                        <span className="text-[13px] font-semibold">Foto {indice + 1}</span>
-                        <span className="text-[11px] text-ink-2">{indice === 0 ? "Principal" : "Opcional"}</span>
-                      </button>
-                    )}
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="mt-3 text-xs text-slate-400">{fotos.length}/3 fotos · Formatos JPG, PNG o WebP</p>
+              </CardContent>
+            </Card>
+
+            {/* SECCIÓN 3: CONDICIÓN DE LA PIEZA */}
+            <Card className="rounded-3xl border border-blue-100/80 bg-white shadow-sm overflow-hidden">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                    <BadgeCheck className="size-5" />
+                  </span>
+                  <div>
+                    <CardTitle id={idCondicion} className="text-xl font-bold text-slate-900 font-sans">
+                      Condición de pieza
+                    </CardTitle>
+                    <CardDescription className="text-xs text-slate-500 font-sans">
+                      Elige el estado real del repuesto para informar al comprador.
+                    </CardDescription>
                   </div>
-                );
-              })}
-            </div>
-            <p className="mt-3 text-[12px] text-ink-2">{fotos.length}/3 fotos · JPG, PNG o WebP</p>
-          </section>
+                </div>
+              </CardHeader>
 
-          <section className={bloque}>
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <BadgeCheck size={20} />
-              </span>
-              <div>
-                <h2 id={idCondicion} className="font-display text-xl font-semibold text-marino">
-                  Condición de pieza
-                </h2>
-                <p className="text-[13px] text-ink-2">Elige el estado real del repuesto.</p>
-              </div>
-            </div>
+              <CardContent className="pt-0">
+                <div
+                  role="radiogroup"
+                  aria-labelledby={idCondicion}
+                  className="grid gap-3 sm:grid-cols-3"
+                  onKeyDown={(e) =>
+                    navegarRadios(
+                      e,
+                      CONDICIONES.map((item) => item.id),
+                      condicion,
+                      setCondicion,
+                    )
+                  }
+                >
+                  {CONDICIONES.map((opcion) => {
+                    const activo = condicion === opcion.id;
+                    const Icono = opcion.icono;
+                    return (
+                      <button
+                        key={opcion.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={activo}
+                        onClick={() => setCondicion(opcion.id)}
+                        className={`relative flex flex-col items-start rounded-2xl border p-4 text-left transition ${
+                          activo
+                            ? "border-blue-600 bg-blue-50/80 ring-2 ring-blue-500/20 shadow-xs"
+                            : "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/40"
+                        }`}
+                      >
+                        <span
+                          className={`flex size-10 items-center justify-center rounded-xl ${
+                            activo ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600"
+                          }`}
+                        >
+                          <Icono className="size-5" />
+                        </span>
+                        <span className="mt-3 text-sm font-bold text-slate-900">{opcion.titulo}</span>
+                        <span className="mt-0.5 text-xs leading-snug text-slate-500">{opcion.texto}</span>
+                        {activo && (
+                          <span className="absolute right-3 top-3 flex size-5 items-center justify-center rounded-full bg-blue-600 text-white">
+                            <Check className="size-3 stroke-[3]" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
 
-            <div
-              role="radiogroup"
-              aria-labelledby={idCondicion}
-              className="mt-5 grid gap-3 sm:grid-cols-3"
-              onKeyDown={(e) =>
-                navegarRadios(
-                  e,
-                  CONDICIONES.map((item) => item.id),
-                  condicion,
-                  setCondicion,
-                )
-              }
-            >
-              {CONDICIONES.map((opcion) => {
-                const activo = condicion === opcion.id;
-                const Icono = opcion.icono;
-                return (
-                  <button
-                    key={opcion.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={activo}
-                    onClick={() => setCondicion(opcion.id)}
-                    className={`relative flex flex-col items-start rounded-2xl border p-4 text-left transition ${
-                      activo
-                        ? "border-blue-500 bg-blue-50/80 ring-4 ring-blue-500/10"
-                        : "border-linea bg-white hover:border-blue-300 hover:bg-blue-50/40"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                        activo ? "bg-blue-600 text-white" : "bg-hielo text-blue-600"
-                      }`}
-                    >
-                      <Icono size={19} />
-                    </span>
-                    <span className="mt-3 text-[14px] font-semibold text-marino">{opcion.titulo}</span>
-                    <span className="mt-0.5 text-[12px] leading-snug text-ink-2">{opcion.texto}</span>
-                    {activo && (
-                      <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white">
-                        <Check size={12} strokeWidth={3} />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className={bloque}>
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <Cog size={20} />
-              </span>
-              <div>
-                <h2 id={idSistema} className="font-display text-xl font-semibold text-marino">
-                  Sistema de vehículo
-                </h2>
-                <p className="text-[13px] text-ink-2">¿A qué sistema pertenece la pieza?</p>
-              </div>
-            </div>
-
-            <div
-              role="radiogroup"
-              aria-labelledby={idSistema}
-              className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4"
-              onKeyDown={(e) =>
-                navegarRadios(
-                  e,
-                  SISTEMAS.map((item) => item.id),
-                  sistema,
-                  setSistema,
-                )
-              }
-            >
-              {SISTEMAS.map((opcion) => {
-                const activo = sistema === opcion.id;
-                const Icono = opcion.icono;
-                return (
-                  <button
-                    key={opcion.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={activo}
-                    onClick={() => setSistema(opcion.id)}
-                    className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition ${
-                      activo
-                        ? "border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-500/10"
-                        : "border-linea bg-white text-marino hover:border-blue-300 hover:bg-blue-50/50"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                        activo ? "bg-blue-600 text-white" : "bg-hielo text-blue-600"
-                      }`}
-                    >
-                      <Icono size={16} />
-                    </span>
-                    <span className="text-[13px] font-semibold leading-tight">{opcion.nombre}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section id="marcas" tabIndex={-1} className={`${bloque} scroll-mt-24 outline-none`}>
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <Car size={20} />
-              </span>
-              <div>
-                <h2 className="font-display text-xl font-semibold text-marino">Compatibilidad de marcas</h2>
-                <p className="text-[13px] text-ink-2">Selecciona todas las marcas compatibles.</p>
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <p className={etiqueta}>Marcas compatibles</p>
-              <span
-                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                  marcas.length > 0 ? "bg-blue-100 text-blue-700" : "bg-hielo text-ink-2"
-                }`}
-              >
-                {marcas.length} seleccionada{marcas.length === 1 ? "" : "s"}
-              </span>
-            </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
-              {MARCAS.map((marca) => {
-                const activo = marcas.includes(marca.id);
-                return (
-                  <button
-                    key={marca.id}
-                    type="button"
-                    aria-pressed={activo}
-                    onClick={() => alternarMarca(marca.id)}
-                    className={`relative flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
-                      activo
-                        ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/10"
-                        : "border-linea bg-white hover:border-blue-300 hover:bg-blue-50/40"
-                    }`}
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-linea">
-                      <LogoMarca marca={marca.id} />
-                    </span>
-                    <span className="text-[13px] font-semibold text-marino">{marca.nombre}</span>
-                    {activo && (
-                      <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white">
-                        <Check size={10} strokeWidth={3} />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {errorMarcas && (
-              <p className="mt-2 text-[12px] font-medium text-rojo">Selecciona al menos una marca compatible.</p>
-            )}
-          </section>
-
-          <section className={bloque}>
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <CircleDollarSign size={20} />
-              </span>
-              <div>
-                <h2 className="font-display text-xl font-semibold text-marino">Precio y stock</h2>
-                <p className="text-[13px] text-ink-2">Define cuánto cuesta y cuántas unidades tienes.</p>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="precio" className={etiqueta}>
-                  Precio (Bs)
-                </label>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-4 top-1/2 mt-1 -translate-y-1/2 text-[14px] font-bold text-blue-600">
-                    Bs
+            {/* SECCIÓN 4: SISTEMA DE VEHÍCULO */}
+            <Card className="rounded-3xl border border-blue-100/80 bg-white shadow-sm overflow-hidden">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                    <Cog className="size-5" />
                   </span>
-                  <input
-                    id="precio"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    inputMode="decimal"
-                    value={precio}
-                    onChange={(e) => setPrecio(e.target.value)}
-                    aria-invalid={errorPrecio}
-                    className={`${campo} pl-12`}
-                    placeholder="0,00"
-                  />
+                  <div>
+                    <CardTitle id={idSistema} className="text-xl font-bold text-slate-900 font-sans">
+                      Sistema del vehículo
+                    </CardTitle>
+                    <CardDescription className="text-xs text-slate-500 font-sans">
+                      ¿A qué subsistema automotriz pertenece esta pieza?
+                    </CardDescription>
+                  </div>
                 </div>
-                {errorPrecio && <p className="mt-1.5 text-[12px] font-medium text-rojo">Ingresa un precio mayor a 0.</p>}
-              </div>
+              </CardHeader>
 
-              <div>
-                <label htmlFor="stock" className={etiqueta}>
-                  Cantidad en stock
-                </label>
-                <div className="mt-2 flex items-stretch overflow-hidden rounded-xl border border-linea bg-white transition focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/15">
-                  <button
-                    type="button"
-                    onClick={() => setStock((valor) => String(Math.max(0, (Number(valor) || 0) - 1)))}
-                    aria-label="Disminuir stock"
-                    className="flex w-12 items-center justify-center text-ink-2 transition hover:bg-blue-50 hover:text-blue-700"
-                  >
-                    <Minus size={17} />
-                  </button>
-                  <input
-                    id="stock"
-                    type="number"
-                    min={0}
-                    value={stock}
-                    onChange={(e) => setStock(e.target.value)}
-                    className="min-w-0 flex-1 border-x border-linea bg-transparent px-3 py-3 text-center text-[15px] font-semibold text-marino outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setStock((valor) => String((Number(valor) || 0) + 1))}
-                    aria-label="Aumentar stock"
-                    className="flex w-12 items-center justify-center text-ink-2 transition hover:bg-blue-50 hover:text-blue-700"
-                  >
-                    <Plus size={17} />
-                  </button>
+              <CardContent className="pt-0">
+                <div
+                  role="radiogroup"
+                  aria-labelledby={idSistema}
+                  className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4"
+                  onKeyDown={(e) =>
+                    navegarRadios(
+                      e,
+                      SISTEMAS.map((item) => item.id),
+                      sistema,
+                      setSistema,
+                    )
+                  }
+                >
+                  {SISTEMAS.map((opcion) => {
+                    const activo = sistema === opcion.id;
+                    const Icono = opcion.icono;
+                    return (
+                      <button
+                        key={opcion.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={activo}
+                        onClick={() => setSistema(opcion.id)}
+                        className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition ${
+                          activo
+                            ? "border-blue-600 bg-blue-50 text-blue-700 ring-2 ring-blue-500/15 font-semibold"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50/50"
+                        }`}
+                      >
+                        <span
+                          className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${
+                            activo ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600"
+                          }`}
+                        >
+                          <Icono className="size-4" />
+                        </span>
+                        <span className="text-xs font-semibold leading-tight">{opcion.nombre}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-                <p className="mt-1.5 text-[12px] text-ink-2">Indica cuántas unidades tienes disponibles.</p>
-              </div>
-            </div>
-          </section>
-        </div>
+              </CardContent>
+            </Card>
 
-        <aside className="h-fit space-y-4 lg:sticky lg:top-24">
-          <div className="rounded-3xl border border-blue-100 bg-white p-5 shadow-[0_1px_2px_rgba(26,19,64,0.04),0_18px_40px_-28px_rgba(37,99,235,0.35)]">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-lg font-semibold text-marino">Vista rápida</h2>
-              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">Demo</span>
-            </div>
-
-            <div className="mt-4 aspect-[4/3] overflow-hidden rounded-2xl border border-linea bg-hielo">
-              {fotos[0] ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={fotos[0].url} alt="Foto principal del repuesto" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-2 text-ink-2">
-                  <Camera size={26} />
-                  <span className="text-[12px] font-semibold">Sin foto todavía</span>
-                </div>
-              )}
-            </div>
-
-            <p className="mt-3 line-clamp-2 font-display text-lg font-semibold leading-snug text-marino">
-              {nombre.trim() || "Nombre del repuesto"}
-            </p>
-
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
-                {condicionActiva?.titulo}
-              </span>
-              <span className="rounded-full bg-hielo px-2.5 py-1 text-[11px] font-semibold text-ink-2">
-                {sistemaActivo?.nombre}
-              </span>
-              <span className="rounded-full bg-hielo px-2.5 py-1 text-[11px] font-semibold text-ink-2">
-                {tipoVehiculo === "auto" ? "Auto" : "Moto"}
-              </span>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {nombresMarcas.length > 0 ? (
-                nombresMarcas.map((marca) => (
-                  <span
-                    key={marca}
-                    className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-100"
+            {/* SECCIÓN 5: COMPATIBILIDAD DE MARCAS */}
+            <Card id="marcas" tabIndex={-1} className="rounded-3xl border border-blue-100/80 bg-white shadow-sm overflow-hidden scroll-mt-24 outline-none">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                      <Car className="size-5" />
+                    </span>
+                    <div>
+                      <CardTitle className="text-xl font-bold text-slate-900 font-sans">
+                        Compatibilidad de marcas
+                      </CardTitle>
+                      <CardDescription className="text-xs text-slate-500 font-sans">
+                        Selecciona las marcas vehiculares compatibles con esta pieza.
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className={
+                      marcas.length > 0
+                        ? "bg-blue-600 text-white font-semibold"
+                        : "bg-slate-100 text-slate-500"
+                    }
                   >
-                    {marca}
+                    {marcas.length} seleccionada{marcas.length === 1 ? "" : "s"}
+                  </Badge>
+                </div>
+              </CardHeader>
+
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4 mt-2">
+                  {MARCAS.map((marca) => {
+                    const activo = marcas.includes(marca.id);
+                    return (
+                      <button
+                        key={marca.id}
+                        type="button"
+                        aria-pressed={activo}
+                        onClick={() => alternarMarca(marca.id)}
+                        className={`relative flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
+                          activo
+                            ? "border-blue-600 bg-blue-50 ring-2 ring-blue-500/15"
+                            : "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/40"
+                        }`}
+                      >
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-100 shadow-2xs">
+                          <LogoMarca marca={marca.id} />
+                        </span>
+                        <span className="text-xs font-bold text-slate-800">{marca.nombre}</span>
+                        {activo && (
+                          <span className="absolute right-2 top-2 flex size-4 items-center justify-center rounded-full bg-blue-600 text-white">
+                            <Check className="size-2.5 stroke-[3]" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {errorMarcas && (
+                  <p className="mt-2 text-xs font-medium text-red-600">Selecciona al menos una marca compatible.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* SECCIÓN 6: PRECIO Y STOCK */}
+            <Card className="rounded-3xl border border-blue-100/80 bg-white shadow-sm overflow-hidden">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                    <CircleDollarSign className="size-5" />
                   </span>
-                ))
-              ) : (
-                <span className="text-[12px] text-ink-2">Aún no eliges marcas compatibles.</span>
-              )}
-            </div>
+                  <div>
+                    <CardTitle className="text-xl font-bold text-slate-900 font-sans">
+                      Precio y stock
+                    </CardTitle>
+                    <CardDescription className="text-xs text-slate-500 font-sans">
+                      Define el precio de venta en Bolivianos y la cantidad en stock.
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
 
-            <div className="mt-4 flex items-end justify-between border-t border-linea pt-4">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2">Precio</p>
-                <p className="font-display text-2xl font-semibold text-marino">
-                  Bs {precioNumero.toLocaleString("es-BO")}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-2">Stock</p>
-                <p className="text-[15px] font-semibold text-marino">{stockNumero} u.</p>
-              </div>
-            </div>
+              <CardContent className="pt-0">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {/* Precio */}
+                  <div className="space-y-2">
+                    <Label htmlFor="precio" className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Precio (Bs) <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-600">
+                        Bs
+                      </span>
+                      <Input
+                        id="precio"
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        inputMode="decimal"
+                        value={precio}
+                        onChange={(e) => setPrecio(e.target.value)}
+                        aria-invalid={errorPrecio}
+                        className="pl-11 h-11 rounded-xl border-slate-200 bg-white text-sm focus-visible:border-blue-500 focus-visible:ring-blue-500/20"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    {errorPrecio && <p className="text-xs font-medium text-red-600">Ingresa un precio mayor a 0.</p>}
+                  </div>
+
+                  {/* Stock */}
+                  <div className="space-y-2">
+                    <Label htmlFor="stock" className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Cantidad en stock
+                    </Label>
+                    <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white h-11 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setStock((valor) => String(Math.max(0, (Number(valor) || 0) - 1)))}
+                        aria-label="Disminuir stock"
+                        className="size-11 rounded-none text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                      >
+                        <Minus className="size-4" />
+                      </Button>
+                      <input
+                        id="stock"
+                        type="number"
+                        min={0}
+                        value={stock}
+                        onChange={(e) => setStock(e.target.value)}
+                        className="min-w-0 flex-1 border-x border-slate-200 bg-transparent px-3 text-center text-sm font-bold text-slate-900 outline-none"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setStock((valor) => String((Number(valor) || 0) + 1))}
+                        aria-label="Aumentar stock"
+                        className="size-11 rounded-none text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                      >
+                        <Plus className="size-4" />
+                      </Button>
+                    </div>
+                    <p className="text-[11px] text-slate-400">Unidades reales listas para despacho.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <button
-            type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl boton-primario px-6 py-4 text-[16px] font-semibold"
-          >
-            Guardar repuesto
-            <ArrowRight size={18} />
-          </button>
-          <p className="text-center text-[12px] leading-snug text-ink-2">
-            Modo demostración: por ahora no se guarda en la base de datos.
-          </p>
-        </aside>
-      </form>
-    </div>
+          {/* ASIDE DE VISTA RÁPIDA (CARD DE SHADCN) */}
+          <aside className="h-fit space-y-4 lg:sticky lg:top-20">
+            <Card className="rounded-3xl border border-blue-200/80 bg-white shadow-md overflow-hidden">
+              <CardHeader className="p-5 pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base font-bold text-slate-900 font-sans">
+                    Vista previa de publicación
+                  </CardTitle>
+                  <Badge variant="secondary" className="bg-blue-50 text-blue-700 border border-blue-200 text-xs">
+                    En vivo
+                  </Badge>
+                </div>
+              </CardHeader>
+
+              <CardContent className="p-5 pt-0 space-y-4">
+                {/* Imagen del repuesto */}
+                <div className="aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-center">
+                  {fotos[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={fotos[0].url} alt="Foto principal del repuesto" className="size-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1.5 text-slate-400">
+                      <Camera className="size-7" />
+                      <span className="text-xs font-semibold">Sin foto cargada</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Nombre de la pieza */}
+                <div>
+                  <p className="line-clamp-2 text-base font-bold leading-snug text-slate-900">
+                    {nombre.trim() || "Nombre del repuesto"}
+                  </p>
+                </div>
+
+                {/* NUEVOS CAMPOS EN LA VISTA PREVIA: MODELO Y AÑO */}
+                {(modelo || ano) && (
+                  <div className="rounded-xl bg-blue-50/70 p-3 border border-blue-100 text-xs space-y-1.5">
+                    {modelo && (
+                      <div className="flex items-center gap-2 text-slate-700">
+                        <Car className="size-3.5 text-blue-600 shrink-0" />
+                        <span className="text-slate-400">Modelo:</span>
+                        <span className="font-bold text-slate-900">{modelo}</span>
+                      </div>
+                    )}
+                    {ano && (
+                      <div className="flex items-center gap-2 text-slate-700">
+                        <Calendar className="size-3.5 text-blue-600 shrink-0" />
+                        <span className="text-slate-400">Año:</span>
+                        <span className="font-bold text-slate-900">{ano}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Badges de condición, sistema y vehículo */}
+                <div className="flex flex-wrap gap-1.5">
+                  <Badge className="bg-blue-600 text-white text-[11px]">
+                    {condicionActiva?.titulo}
+                  </Badge>
+                  <Badge variant="outline" className="border-blue-200 text-blue-800 text-[11px]">
+                    {sistemaActivo?.nombre}
+                  </Badge>
+                  <Badge variant="outline" className="border-slate-200 text-slate-700 text-[11px]">
+                    {tipoVehiculo === "auto" ? "Auto" : "Moto"}
+                  </Badge>
+                </div>
+
+                {/* Marcas compatibles */}
+                <div className="flex flex-wrap gap-1">
+                  {nombresMarcas.length > 0 ? (
+                    nombresMarcas.map((marca) => (
+                      <span
+                        key={marca}
+                        className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-800 border border-slate-200"
+                      >
+                        {marca}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-slate-400">Sin marcas seleccionadas</span>
+                  )}
+                </div>
+
+                <Separator className="bg-slate-100" />
+
+                {/* Precio y stock */}
+                <div className="flex items-end justify-between pt-1">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Precio</p>
+                    <p className="text-2xl font-black text-blue-900">
+                      Bs {precioNumero.toLocaleString("es-BO")}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Stock</p>
+                    <p className="text-sm font-bold text-slate-700">{stockNumero} u.</p>
+                  </div>
+                </div>
+
+                {/* Alerta de Error si falla la inserción o conexión con Supabase */}
+                {errorServidor && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 flex items-start gap-2 animate-in fade-in">
+                    <AlertCircle className="size-4 shrink-0 text-red-600 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="font-bold text-red-800">Error al guardar</p>
+                      <p className="mt-0.5 leading-relaxed text-[11px]">{errorServidor}</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+
+              <CardFooter className="p-5 pt-0 flex flex-col gap-2">
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={guardando}
+                  className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold h-12 shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 text-sm disabled:opacity-75 transition-all"
+                >
+                  {guardando ? (
+                    <>
+                      <span className="size-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Publicar repuesto</span>
+                      <ArrowRight className="size-4" />
+                    </>
+                  )}
+                </Button>
+                <p className="text-center text-[11px] text-slate-400">
+                  Se subirá a la base de datos y Storage de Supabase
+                </p>
+              </CardFooter>
+            </Card>
+          </aside>
+        </form>
+      </div>
+    </TooltipProvider>
   );
 }
 
 function LogoMarca({ marca }: { marca: MarcaId }) {
   const base = {
     viewBox: "0 0 48 48",
-    className: "h-8 w-8",
+    className: "size-8",
     "aria-hidden": "true",
     focusable: "false",
   } as const;

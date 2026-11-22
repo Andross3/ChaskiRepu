@@ -26,7 +26,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 import {
   CATALOGO_DEMO,
   type CondicionCatalogo,
@@ -34,6 +34,31 @@ import {
   type RepuestoCatalogo,
 } from "@/lib/catalogo-demo";
 import { formatBs } from "@/lib/tipos";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const MARCAS: Record<MarcaCatalogo, { nombre: string; Icono: LucideIcon; clase: string }> = {
   toyota: { nombre: "Toyota", Icono: CarFront, clase: "bg-red-50 text-red-600 ring-red-100" },
@@ -124,26 +149,6 @@ export function CatalogoCliente({ tienda }: { tienda: string }) {
     });
   }, [repuestos, q, condiciones, marcas]);
 
-  useEffect(() => {
-    if (!editando) return;
-
-    const alPresionar = (evento: KeyboardEvent) => {
-      if (evento.key === "Escape") {
-        setEditando(null);
-        setBorrador(null);
-      }
-    };
-
-    const overflowAnterior = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", alPresionar);
-
-    return () => {
-      document.body.style.overflow = overflowAnterior;
-      window.removeEventListener("keydown", alPresionar);
-    };
-  }, [editando]);
-
   const alternarCondicion = (condicion: CondicionCatalogo) => {
     setCondiciones((previas) =>
       previas.includes(condicion) ? previas.filter((item) => item !== condicion) : [...previas, condicion],
@@ -225,249 +230,267 @@ export function CatalogoCliente({ tienda }: { tienda: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white font-sans text-blue-950">
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800 text-white">
-        <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-sky-300/20 blur-3xl" />
+    <TooltipProvider>
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white font-sans text-blue-950">
+        <section className="relative overflow-hidden bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800 text-white">
+          <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-sky-300/20 blur-3xl" />
 
-        <div className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-14">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-50">
-            <Store size={14} />
-            Catálogo de tienda
-          </div>
-
-          <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">Catálogo</h1>
-          <p className="mt-2 text-lg font-medium text-blue-100">{tienda}</p>
-
-          <div className="mt-6 flex max-w-2xl items-center gap-2 rounded-2xl border border-white/40 bg-white p-1.5 shadow-xl shadow-blue-950/20">
-            <Search className="ml-2 h-5 w-5 shrink-0 text-blue-400" aria-hidden="true" />
-            <input
-              value={q}
-              onChange={(evento) => setQ(evento.target.value)}
-              placeholder="Busca por repuesto, código o marca..."
-              aria-label="Buscar en el catálogo"
-              className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[15px] font-medium text-blue-950 outline-none placeholder:text-blue-400"
-            />
-            {q && (
-              <button
-                type="button"
-                onClick={() => setQ("")}
-                aria-label="Limpiar búsqueda"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-blue-400 transition hover:bg-blue-50 hover:text-blue-700"
-              >
-                <X size={17} />
-              </button>
-            )}
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-100">
-              <SlidersHorizontal size={14} />
-              Filtros
-            </span>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {FILTROS_CONDICION.map((filtro) => (
-                <BotonFiltro
-                  key={filtro.id}
-                  activo={condiciones.includes(filtro.id)}
-                  label={filtro.label}
-                  Icono={filtro.Icono}
-                  onClick={() => alternarCondicion(filtro.id)}
-                />
-              ))}
-            </div>
-
-            <span className="hidden h-6 w-px bg-white/20 sm:block" />
-
-            <div className="flex flex-wrap items-center gap-2">
-              {FILTROS_MARCA.map((filtro) => (
-                <BotonFiltro
-                  key={filtro.id}
-                  activo={marcas.includes(filtro.id)}
-                  label={filtro.nombre}
-                  Icono={filtro.Icono}
-                  onClick={() => alternarMarca(filtro.id)}
-                />
-              ))}
-            </div>
-
-            {hayFiltros && (
-              <button
-                type="button"
-                onClick={limpiarFiltros}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-white/25 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/15"
-              >
-                <X size={14} />
-                Limpiar
-              </button>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight text-blue-950">
-              {lista.length} {lista.length === 1 ? "repuesto" : "repuestos"}
-            </h2>
-            <p className="mt-1 text-sm text-blue-500">
-              {hayFiltros ? "Resultados según tus filtros" : "Todo el inventario disponible"}
-            </p>
-          </div>
-          {hayFiltros && (
-            <button
-              type="button"
-              onClick={limpiarFiltros}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-100 bg-white px-3 py-2 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50"
+          <div className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-14">
+            <Badge
+              variant="outline"
+              className="gap-2 rounded-full border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-50"
             >
-              <X size={14} />
-              Limpiar filtros
-            </button>
-          )}
-        </div>
+              <Store className="size-3.5" />
+              Catálogo de tienda
+            </Badge>
 
-        {lista.length === 0 ? (
-          <div className="mt-8 rounded-2xl border border-blue-100 bg-white p-10 text-center shadow-sm">
-            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-500">
-              <Search size={24} />
-            </span>
-            <p className="mt-4 text-lg font-semibold text-blue-950">No encontramos repuestos</p>
-            <p className="mx-auto mt-1 max-w-sm text-sm text-blue-500">
-              Prueba con otro término de búsqueda o quita algunos filtros.
-            </p>
-            <button
-              type="button"
-              onClick={limpiarFiltros}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-            >
-              <X size={16} />
-              Limpiar filtros
-            </button>
-          </div>
-        ) : (
-          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {lista.map((repuesto) => (
-              <TarjetaCatalogo
-                key={repuesto.id}
-                repuesto={repuesto}
-                onEditar={abrirEditar}
-                onEliminar={eliminar}
+            <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">Catálogo</h1>
+            <p className="mt-2 text-lg font-medium text-blue-100">{tienda}</p>
+
+            <div className="relative mt-6 flex max-w-2xl items-center rounded-2xl border border-white/40 bg-white p-1.5 shadow-xl shadow-blue-950/20">
+              <Search className="ml-2 size-5 shrink-0 text-blue-400" aria-hidden="true" />
+              <Input
+                value={q}
+                onChange={(evento) => setQ(evento.target.value)}
+                placeholder="Busca por repuesto, código o marca..."
+                aria-label="Buscar en el catálogo"
+                className="h-9 border-none bg-transparent px-2 text-[15px] font-medium text-blue-950 shadow-none ring-0 placeholder:text-blue-400 focus-visible:ring-0"
               />
-            ))}
+              {q && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={() => setQ("")}
+                  aria-label="Limpiar búsqueda"
+                  className="size-8 rounded-lg text-blue-400 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  <X className="size-4" />
+                </Button>
+              )}
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-100">
+                <SlidersHorizontal className="size-3.5" />
+                Filtros
+              </span>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {FILTROS_CONDICION.map((filtro) => (
+                  <BotonFiltro
+                    key={filtro.id}
+                    activo={condiciones.includes(filtro.id)}
+                    label={filtro.label}
+                    Icono={filtro.Icono}
+                    onClick={() => alternarCondicion(filtro.id)}
+                  />
+                ))}
+              </div>
+
+              <span className="hidden h-6 w-px bg-white/20 sm:block" />
+
+              <div className="flex flex-wrap items-center gap-2">
+                {FILTROS_MARCA.map((filtro) => (
+                  <BotonFiltro
+                    key={filtro.id}
+                    activo={marcas.includes(filtro.id)}
+                    label={filtro.nombre}
+                    Icono={filtro.Icono}
+                    onClick={() => alternarMarca(filtro.id)}
+                  />
+                ))}
+              </div>
+
+              {hayFiltros && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={limpiarFiltros}
+                  className="ml-auto gap-1.5 rounded-xl border border-white/25 text-xs font-semibold text-white hover:bg-white/15 hover:text-white"
+                >
+                  <X className="size-3.5" />
+                  Limpiar
+                </Button>
+              )}
+            </div>
           </div>
-        )}
+        </section>
 
-        <p className="mt-8 text-center text-xs text-blue-400">
-          Los cambios de esta vista son provisionales y no se guardan en la base de datos.
-        </p>
-      </section>
+        <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight text-blue-950">
+                {lista.length} {lista.length === 1 ? "repuesto" : "repuestos"}
+              </h2>
+              <p className="mt-1 text-sm text-blue-500">
+                {hayFiltros ? "Resultados según tus filtros" : "Todo el inventario disponible"}
+              </p>
+            </div>
+            {hayFiltros && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={limpiarFiltros}
+                className="gap-1.5 rounded-xl border-blue-100 bg-white text-xs font-semibold text-blue-700 shadow-xs hover:bg-blue-50 hover:text-blue-800"
+              >
+                <X className="size-3.5" />
+                Limpiar filtros
+              </Button>
+            )}
+          </div>
 
-      {editando && borrador && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-blue-950/50 p-4 backdrop-blur-sm sm:items-center"
-          onPointerDown={(evento) => {
-            if (evento.target === evento.currentTarget) cerrarEditar();
+          {lista.length === 0 ? (
+            <Card className="mt-8 border-blue-100 bg-white p-10 text-center shadow-xs">
+              <CardContent className="flex flex-col items-center p-0">
+                <span className="flex size-14 items-center justify-center rounded-full bg-blue-50 text-blue-500">
+                  <Search className="size-6" />
+                </span>
+                <p className="mt-4 text-lg font-semibold text-blue-950">No encontramos repuestos</p>
+                <p className="mx-auto mt-1 max-w-sm text-sm text-blue-500">
+                  Prueba con otro término de búsqueda o quita algunos filtros.
+                </p>
+                <Button
+                  type="button"
+                  onClick={limpiarFiltros}
+                  className="mt-5 gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  <X className="size-4" />
+                  Limpiar filtros
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {lista.map((repuesto) => (
+                <TarjetaCatalogo
+                  key={repuesto.id}
+                  repuesto={repuesto}
+                  onEditar={abrirEditar}
+                  onEliminar={eliminar}
+                />
+              ))}
+            </div>
+          )}
+
+          <p className="mt-8 text-center text-xs text-blue-400">
+            Los cambios de esta vista son provisionales y no se guardan en la base de datos.
+          </p>
+        </section>
+
+        <Dialog
+          open={Boolean(editando)}
+          onOpenChange={(abierto) => {
+            if (!abierto) cerrarEditar();
           }}
         >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="titulo-editar"
-            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl sm:p-6"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 id="titulo-editar" className="text-lg font-semibold text-blue-950">
-                  Editar repuesto
-                </h2>
-                <p className="mt-1 text-sm text-blue-500">{editando.nombre}</p>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Editar repuesto</DialogTitle>
+              <DialogDescription>{editando?.nombre}</DialogDescription>
+            </DialogHeader>
+
+            {borrador && (
+              <div className="space-y-4 py-2">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="precio-repuesto"
+                      className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-500"
+                    >
+                      Precio (Bs.)
+                    </Label>
+                    <Input
+                      id="precio-repuesto"
+                      type="number"
+                      min={0}
+                      step={1}
+                      autoFocus
+                      value={borrador.precio}
+                      onChange={(evento) =>
+                        setBorrador((previo) => (previo ? { ...previo, precio: evento.target.value } : previo))
+                      }
+                      className="rounded-xl border-blue-100 bg-blue-50/50 font-semibold text-blue-950 focus-visible:border-blue-400 focus-visible:bg-white focus-visible:ring-blue-100"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="stock-repuesto"
+                      className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-500"
+                    >
+                      Stock
+                    </Label>
+                    <Input
+                      id="stock-repuesto"
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={borrador.stock}
+                      onChange={(evento) =>
+                        setBorrador((previo) => (previo ? { ...previo, stock: evento.target.value } : previo))
+                      }
+                      className="rounded-xl border-blue-100 bg-blue-50/50 font-semibold text-blue-950 focus-visible:border-blue-400 focus-visible:bg-white focus-visible:ring-blue-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-500">
+                    Imagen principal
+                  </Label>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="h-20 w-28 shrink-0 rounded-xl bg-blue-50 bg-cover bg-center ring-1 ring-blue-100"
+                      style={{ backgroundImage: `url("${borrador.imagen}")` }}
+                      role="img"
+                      aria-label="Vista previa de la imagen"
+                    />
+                    <Label
+                      htmlFor="archivo-imagen"
+                      className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-sm font-semibold text-blue-700 shadow-xs transition hover:bg-blue-50"
+                    >
+                      <ImagePlus className="size-4" />
+                      Cambiar imagen
+                      <input
+                        id="archivo-imagen"
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        onChange={cargarImagen}
+                      />
+                    </Label>
+                  </div>
+                </div>
               </div>
-              <button
+            )}
+
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button
                 type="button"
+                variant="outline"
                 onClick={cerrarEditar}
-                aria-label="Cerrar"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-blue-400 transition hover:bg-blue-50 hover:text-blue-700"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-500">
-                  Precio (Bs.)
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  autoFocus
-                  value={borrador.precio}
-                  onChange={(evento) =>
-                    setBorrador((previo) => (previo ? { ...previo, precio: evento.target.value } : previo))
-                  }
-                  className="mt-1.5 w-full rounded-xl border border-blue-100 bg-blue-50/50 px-3 py-2.5 text-sm font-semibold text-blue-950 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-500">Stock</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={borrador.stock}
-                  onChange={(evento) =>
-                    setBorrador((previo) => (previo ? { ...previo, stock: evento.target.value } : previo))
-                  }
-                  className="mt-1.5 w-full rounded-xl border border-blue-100 bg-blue-50/50 px-3 py-2.5 text-sm font-semibold text-blue-950 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                />
-              </label>
-            </div>
-
-            <div className="mt-4">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-500">
-                Imagen principal
-              </span>
-              <div className="mt-1.5 flex items-center gap-3">
-                <div
-                  className="h-20 w-28 shrink-0 rounded-xl bg-blue-50 bg-cover bg-center ring-1 ring-blue-100"
-                  style={{ backgroundImage: `url("${borrador.imagen}")` }}
-                  role="img"
-                  aria-label="Vista previa de la imagen"
-                />
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50">
-                  <ImagePlus size={16} />
-                  Cambiar imagen
-                  <input type="file" accept="image/*" className="sr-only" onChange={cargarImagen} />
-                </label>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={cerrarEditar}
-                className="rounded-xl border border-blue-100 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
+                className="rounded-xl border-blue-100 font-semibold text-blue-700 hover:bg-blue-50"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={guardarEdicion}
                 disabled={!edicionValida}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="gap-2 rounded-xl bg-blue-600 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
               >
-                <Save size={16} />
+                <Save className="size-4" />
                 Guardar cambios
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </TooltipProvider>
   );
 }
 
@@ -483,33 +506,35 @@ function BotonFiltro({
   onClick: () => void;
 }) {
   return (
-    <div className="group relative shrink-0">
-      <button
-        type="button"
-        onClick={onClick}
-        aria-pressed={activo}
-        aria-label={label}
-        title={label}
-        className={`relative flex h-11 w-11 items-center justify-center rounded-xl border transition ${
-          activo
-            ? "border-white bg-white text-blue-700 shadow-lg shadow-blue-950/20"
-            : "border-white/30 bg-white/10 text-white hover:border-white/60 hover:bg-white/20"
-        }`}
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onClick}
+            aria-pressed={activo}
+            aria-label={label}
+            className={`relative size-11 rounded-xl border transition ${
+              activo
+                ? "border-white bg-white text-blue-700 shadow-lg shadow-blue-950/20 hover:bg-white/90 hover:text-blue-700"
+                : "border-white/30 bg-white/10 text-white hover:border-white/60 hover:bg-white/20 hover:text-white"
+            }`}
+          />
+        }
       >
-        <Icono size={20} strokeWidth={2.1} />
+        <Icono className="size-5" strokeWidth={2.1} />
         {activo && (
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-white ring-2 ring-white">
-            <Check size={10} strokeWidth={3} />
+          <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-blue-600 text-white ring-2 ring-white">
+            <Check className="size-2.5" strokeWidth={3} />
           </span>
         )}
-      </button>
-      <span
-        role="tooltip"
-        className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-white px-2.5 py-1 text-[11px] font-semibold text-blue-700 opacity-0 shadow-lg ring-1 ring-blue-100 transition duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
-      >
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="border border-blue-100 bg-white text-xs font-semibold text-blue-700 shadow-md">
         {label}
-      </span>
-    </div>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -523,8 +548,6 @@ function TarjetaCatalogo({
   onEliminar: (id: string) => void;
 }) {
   const [indice, setIndice] = useState(0);
-  const [menuAbierto, setMenuAbierto] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   const total = repuesto.imagenes.length;
   const indiceActual = total > 0 ? indice % total : 0;
@@ -532,22 +555,11 @@ function TarjetaCatalogo({
   const condicion = CONDICIONES[repuesto.condicion];
   const IconoCondicion = condicion.Icono;
 
-  useEffect(() => {
-    if (!menuAbierto) return;
-
-    const cerrar = (evento: PointerEvent) => {
-      if (!menuRef.current?.contains(evento.target as Node)) setMenuAbierto(false);
-    };
-
-    document.addEventListener("pointerdown", cerrar);
-    return () => document.removeEventListener("pointerdown", cerrar);
-  }, [menuAbierto]);
-
   const anterior = () => setIndice((previo) => (previo - 1 + total) % total);
   const siguiente = () => setIndice((previo) => (previo + 1) % total);
 
   return (
-    <article className="group relative flex flex-col rounded-2xl border border-blue-100 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-100/70">
+    <Card className="group relative flex flex-col overflow-hidden rounded-2xl border-blue-100 bg-white py-0 shadow-xs transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-100/70">
       <div className="relative h-48 overflow-hidden rounded-t-2xl bg-blue-50">
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -557,31 +569,36 @@ function TarjetaCatalogo({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-blue-950/20 via-transparent to-transparent" />
 
-        <span
-          className={`absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${condicion.clase}`}
+        <Badge
+          variant="outline"
+          className={`absolute left-3 top-3 z-10 gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${condicion.clase}`}
         >
-          <IconoCondicion size={12} />
+          <IconoCondicion className="size-3" />
           {condicion.label}
-        </span>
+        </Badge>
 
         {total > 1 && (
           <>
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="icon-xs"
               onClick={anterior}
               aria-label="Imagen anterior"
-              className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-blue-700 shadow-md transition hover:bg-white"
+              className="absolute left-2 top-1/2 z-10 size-8 -translate-y-1/2 rounded-full bg-white/90 text-blue-700 shadow-md backdrop-blur hover:bg-white"
             >
-              <ChevronLeft size={18} />
-            </button>
-            <button
+              <ChevronLeft className="size-4.5" />
+            </Button>
+            <Button
               type="button"
+              variant="secondary"
+              size="icon-xs"
               onClick={siguiente}
               aria-label="Imagen siguiente"
-              className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-blue-700 shadow-md transition hover:bg-white"
+              className="absolute right-2 top-1/2 z-10 size-8 -translate-y-1/2 rounded-full bg-white/90 text-blue-700 shadow-md backdrop-blur hover:bg-white"
             >
-              <ChevronRight size={18} />
-            </button>
+              <ChevronRight className="size-4.5" />
+            </Button>
             <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
               {repuesto.imagenes.map((_, posicion) => (
                 <button
@@ -600,52 +617,42 @@ function TarjetaCatalogo({
         )}
       </div>
 
-      <div ref={menuRef} className="absolute right-3 top-3 z-30">
-        <button
-          type="button"
-          onClick={() => setMenuAbierto((previo) => !previo)}
-          aria-label="Opciones del repuesto"
-          aria-haspopup="menu"
-          aria-expanded={menuAbierto}
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-blue-700 shadow-md ring-1 ring-blue-100 backdrop-blur transition hover:bg-white"
-        >
-          <MoreVertical size={18} />
-        </button>
-
-        {menuAbierto && (
-          <div
-            role="menu"
-            className="absolute right-0 top-full mt-1 w-40 overflow-hidden rounded-xl border border-blue-100 bg-white p-1 shadow-xl shadow-blue-950/10"
+      <div className="absolute right-3 top-3 z-30">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Opciones del repuesto"
+                className="size-9 rounded-xl bg-white/90 text-blue-700 shadow-md ring-1 ring-blue-100 backdrop-blur hover:bg-white"
+              />
+            }
           >
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setMenuAbierto(false);
-                onEditar(repuesto);
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-50"
+            <MoreVertical className="size-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40 border-blue-100 bg-white p-1 shadow-xl shadow-blue-950/10">
+            <DropdownMenuItem
+              onClick={() => onEditar(repuesto)}
+              className="gap-2 font-medium text-blue-700 hover:bg-blue-50 focus:bg-blue-50 focus:text-blue-700"
             >
-              <Pencil size={15} />
+              <Pencil className="size-3.5" />
               Editar
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setMenuAbierto(false);
-                onEliminar(repuesto.id);
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => onEliminar(repuesto.id)}
+              className="gap-2 font-medium"
             >
-              <Trash2 size={15} />
+              <Trash2 className="size-3.5" />
               Eliminar
-            </button>
-          </div>
-        )}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
+      <CardContent className="flex flex-1 flex-col p-4">
         <h3 className="text-base font-semibold leading-snug text-blue-950">{repuesto.nombre}</h3>
         <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-400">
           {repuesto.codigo}
@@ -658,17 +665,22 @@ function TarjetaCatalogo({
               const info = MARCAS[marca];
               const Icono = info.Icono;
               return (
-                <span
-                  key={marca}
-                  title={info.nombre}
-                  aria-label={info.nombre}
-                  className={`group/marca relative flex h-7 w-7 items-center justify-center rounded-full ring-1 ${info.clase}`}
-                >
-                  <Icono size={15} strokeWidth={2.2} />
-                  <span className="pointer-events-none absolute -top-8 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-md bg-blue-950 px-2 py-1 text-[10px] font-semibold text-white opacity-0 transition group-hover/marca:opacity-100">
+                <Tooltip key={marca}>
+                  <TooltipTrigger
+                    render={
+                      <span
+                        tabIndex={0}
+                        aria-label={info.nombre}
+                        className={`relative flex size-7 cursor-default items-center justify-center rounded-full ring-1 ${info.clase}`}
+                      />
+                    }
+                  >
+                    <Icono className="size-3.5" strokeWidth={2.2} />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-blue-950 px-2 py-1 text-[10px] font-semibold text-white">
                     {info.nombre}
-                  </span>
-                </span>
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
@@ -679,18 +691,19 @@ function TarjetaCatalogo({
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-400">Precio</p>
             <p className="text-2xl font-bold tracking-tight text-blue-950">{formatBs(repuesto.precio)}</p>
           </div>
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+          <Badge
+            variant="outline"
+            className={`gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
               repuesto.stock > 0
-                ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
-                : "bg-red-50 text-red-600 ring-red-100"
+                ? "border-emerald-100 bg-emerald-50 text-emerald-700 ring-emerald-100"
+                : "border-red-100 bg-red-50 text-red-600 ring-red-100"
             }`}
           >
-            <Package size={13} />
+            <Package className="size-3.5" />
             {repuesto.stock > 0 ? `Stock: ${repuesto.stock}` : "Sin stock"}
-          </span>
+          </Badge>
         </div>
-      </div>
-    </article>
+      </CardContent>
+    </Card>
   );
 }
