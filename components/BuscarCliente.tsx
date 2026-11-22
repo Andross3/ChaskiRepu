@@ -78,6 +78,20 @@ export function BuscarCliente() {
   const [orden, setOrden] = useState<Orden>("barato");
   const [ejemplos, setEjemplos] = useState(true);
 
+  // Next conserva esta pantalla en memoria al navegar: sus estados iniciales no se recalculan.
+  // Por eso, cada vez que cambia la dirección (otra zona, otra pieza, otro vehículo), se vuelven a leer de ella.
+  const claveUrl = sp.toString();
+  const [claveVista, setClaveVista] = useState(claveUrl);
+  if (claveUrl !== claveVista) {
+    setClaveVista(claveUrl);
+    setQ(sp.get("q") ?? "");
+    setPieza(sp.get("pieza"));
+    setTipo((sp.get("tipo") as TipoVehiculo | null) ?? "todos");
+    setZona(sp.get("zona"));
+    setConds([]);
+    setPrecioMax(null);
+  }
+
   useEffect(() => {
     let vivo = true;
     cargarRepuestos(true).then((r) => {
