@@ -89,7 +89,7 @@ export function Portada() {
                   onClick={() => b.cambiarTipo(t)}
                   aria-pressed={tipo === t}
                   className={`rounded-lg px-4 py-1.5 text-[13px] font-semibold transition ${
-                    tipo === t ? "bg-ambar text-marino" : "text-white/80 hover:text-white"
+                    tipo === t ? "bg-azul text-white" : "text-white/80 hover:text-white"
                   }`}
                 >
                   {t === "auto" ? "Auto" : "Moto"}
@@ -111,7 +111,7 @@ export function Portada() {
                   aria-pressed={b.motor === id}
                   className={`rounded-full border px-3 py-1 text-[12px] font-semibold transition ${
                     b.motor === id
-                      ? "border-cian bg-cian text-marino"
+                      ? "border-azul bg-azul text-white"
                       : "border-white/20 text-white/80 hover:border-white/50"
                   }`}
                 >

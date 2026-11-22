@@ -85,7 +85,7 @@ export function Hero({ saludo, titulo }: { saludo: string; titulo: string }) {
                 aria-pressed={b.motor === id}
                 className={`rounded-full border px-3.5 py-1.5 text-[13px] font-semibold backdrop-blur transition ${
                   b.motor === id
-                    ? "border-cian bg-cian text-marino"
+                    ? "border-azul bg-azul text-white"
                     : "border-white/25 bg-white/5 text-white/85 hover:border-white/50"
                 }`}
               >
@@ -108,7 +108,7 @@ export function Hero({ saludo, titulo }: { saludo: string; titulo: string }) {
               <button
                 type="button"
                 onClick={() => b.elegirZona(null)}
-                className="rounded-full border border-ambar/50 bg-ambar-suave px-3.5 py-1 text-[13px] font-semibold text-[#8a4300]"
+                className="rounded-full border border-ambar/50 bg-ambar-suave px-3.5 py-1 text-[13px] font-semibold text-marino-2"
               >
                 Zona: {zonaActual.label} ✕
               </button>

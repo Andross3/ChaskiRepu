@@ -23,8 +23,8 @@ export function Chip({
 }) {
   const tonos = {
     neutro: "bg-hielo text-ink-2 border-linea",
-    azul: "bg-azul-suave text-marino-2 border-[#d9d0ff]",
-    ambar: "bg-ambar-suave text-[#8a4300] border-[#ffcf9e]",
+    azul: "bg-azul-suave text-marino-2 border-[#c3dcff]",
+    ambar: "bg-ambar-suave text-marino-2 border-[#ffcf9e]",
     verde: "bg-verde-suave text-[#0b6b50] border-[#a8e8d1]",
     rojo: "bg-rojo-suave text-rojo border-[#efc3b9]",
   } as const;

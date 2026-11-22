@@ -184,7 +184,7 @@ export function BuscarCliente() {
                     style={
                       activa
                         ? { background: info.bg, color: info.fg }
-                        : { background: "#fff", color: "#1a1340" }
+                        : { background: "#fff", color: "#0a1f3d" }
                     }
                   >
                     {info.label}

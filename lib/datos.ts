@@ -1,11 +1,47 @@
 import { REPUESTOS_DEMO } from "./demo";
 import { supabase } from "./supabase";
-import type { Repuesto } from "./tipos";
+import type { Proveedor, Repuesto } from "./tipos";
 
 export interface ResultadoCarga {
   items: Repuesto[];
   reales: number;
   error?: string;
+}
+
+/** Fila tal como llega de Supabase. Acepta el esquema nuevo (`precio`) y el anterior (`precio_bs`). */
+interface Fila {
+  id: string;
+  proveedor_id: string | null;
+  nombre: string;
+  categoria: string;
+  condicion: string;
+  precio?: number | string | null;
+  precio_bs?: number | string | null;
+  stock?: number | null;
+  tipo_vehiculo?: string | null;
+  posicion?: string | null;
+  codigo?: string | null;
+  equivalencias?: string[] | null;
+  sinonimos?: string[] | null;
+  proveedores?: Proveedor | null;
+}
+
+function normalizar(f: Fila): Repuesto {
+  return {
+    id: f.id,
+    proveedor_id: f.proveedor_id,
+    nombre: f.nombre,
+    categoria: f.categoria ?? "",
+    posicion: f.posicion ?? null,
+    codigo: f.codigo ?? null,
+    equivalencias: f.equivalencias ?? null,
+    sinonimos: f.sinonimos ?? null,
+    condicion: f.condicion ?? "nuevo",
+    precio_bs: Number(f.precio ?? f.precio_bs ?? 0),
+    stock: Number(f.stock ?? 0),
+    tipo_vehiculo: f.tipo_vehiculo ?? "auto",
+    proveedores: f.proveedores ?? null,
+  };
 }
 
 /**
@@ -18,10 +54,11 @@ export async function cargarRepuestos(incluirEjemplos = true): Promise<Resultado
   if (supabase) {
     const { data, error: err } = await supabase
       .from("repuestos")
-      .select("*, proveedores(nombre,direccion,lat,lng,whatsapp)")
-      .order("precio_bs", { ascending: true });
+      .select("*, proveedores(nombre,direccion,lat,lng,whatsapp)");
     if (err) error = err.message;
-    else reales = (data ?? []) as unknown as Repuesto[];
+    else {
+      reales = ((data ?? []) as unknown as Fila[]).map(normalizar).sort((a, b) => a.precio_bs - b.precio_bs);
+    }
   } else {
     error = "Falta configurar las claves de Supabase en el archivo .env";
   }

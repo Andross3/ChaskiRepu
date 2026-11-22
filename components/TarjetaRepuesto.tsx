@@ -4,7 +4,7 @@ import { Ilustracion } from "./Ilustracion";
 import { distanciaKm, textoDistancia, UBICACION_BASE } from "@/lib/geo";
 import { formatBs, type Repuesto } from "@/lib/tipos";
 
-const FONDOS = ["#efeafc", "#fff0e0", "#ece9fb"];
+const FONDOS = ["#e6eefc", "#e3f6fb", "#eceffb"];
 
 export function fondoPor(id: string): string {
   let h = 0;

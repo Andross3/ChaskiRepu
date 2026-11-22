@@ -16,7 +16,7 @@ export function Navbar() {
   return (
     <header
       className={`sticky top-0 z-40 border-b backdrop-blur ${
-        oscuro ? "border-white/10 bg-noche/80 text-white" : "border-linea bg-crema/90"
+        oscuro ? "border-white/10 bg-[#0f2d5e]/90 text-white" : "border-linea bg-crema/90"
       }`}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">

@@ -33,15 +33,15 @@ function QRDemo({ semilla }: { semilla: string }) {
   }
   const ojo = (ox: number, oy: number) => (
     <g key={`${ox}-${oy}`}>
-      <rect x={ox} y={oy} width="7" height="7" fill="#1a1340" />
+      <rect x={ox} y={oy} width="7" height="7" fill="#0a1f3d" />
       <rect x={ox + 1} y={oy + 1} width="5" height="5" fill="#fff" />
-      <rect x={ox + 2} y={oy + 2} width="3" height="3" fill="#1a1340" />
+      <rect x={ox + 2} y={oy + 2} width="3" height="3" fill="#0a1f3d" />
     </g>
   );
   return (
     <svg viewBox={`-1 -1 ${n + 2} ${n + 2}`} className="mx-auto h-44 w-44 rounded-xl border border-linea bg-white" role="img" aria-label="Código QR de ejemplo">
       {celdas.map(([x, y]) => (
-        <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="#1a1340" />
+        <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="#0a1f3d" />
       ))}
       {ojo(0, 0)}
       {ojo(n - 7, 0)}
@@ -53,16 +53,16 @@ function QRDemo({ semilla }: { semilla: string }) {
 function Moto() {
   return (
     <svg viewBox="0 0 120 64" className="h-14 w-24" aria-hidden="true">
-      <g stroke="#1a1340" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="26" cy="46" r="12" fill="#1a1340" />
+      <g stroke="#0a1f3d" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="26" cy="46" r="12" fill="#0a1f3d" />
         <circle cx="26" cy="46" r="5" fill="#ffeedd" />
-        <circle cx="94" cy="46" r="12" fill="#1a1340" />
+        <circle cx="94" cy="46" r="12" fill="#0a1f3d" />
         <circle cx="94" cy="46" r="5" fill="#ffeedd" />
         <path d="M26 46L50 30H78L94 46" fill="none" strokeWidth="4" />
-        <path d="M44 30C48 20 68 18 78 26L74 34H48Z" fill="#7a5cff" />
+        <path d="M44 30C48 20 68 18 78 26L74 34H48Z" fill="#2f8bff" />
         <path d="M78 26L86 14H98" fill="none" />
         <rect x="14" y="14" width="26" height="18" rx="3" fill="#ffeedd" />
-        <path d="M6 22h6M4 28h8" stroke="#ff8a1f" />
+        <path d="M6 22h6M4 28h8" stroke="#3ea6ff" />
       </g>
     </svg>
   );
@@ -187,12 +187,12 @@ export function DetalleRepuesto() {
               className="relative h-40 border-b-2 border-linea"
               style={{
                 background:
-                  "repeating-linear-gradient(0deg, transparent 0 31px, rgba(11,42,74,0.1) 31px 32px), repeating-linear-gradient(90deg, transparent 0 31px, rgba(11,42,74,0.1) 31px 32px), #efeafc",
+                  "repeating-linear-gradient(0deg, transparent 0 31px, rgba(11,42,74,0.1) 31px 32px), repeating-linear-gradient(90deg, transparent 0 31px, rgba(11,42,74,0.1) 31px 32px), #e6eefc",
               }}
             >
               <svg viewBox="0 0 60 80" className="absolute left-1/2 top-1/2 h-16 w-12 -translate-x-1/2 -translate-y-[85%]" aria-hidden="true">
-                <path d="M30 76C14 52 6 42 6 28a24 24 0 0148 0c0 14-8 24-24 48z" fill="#ff8a1f" stroke="#1a1340" strokeWidth="4" />
-                <circle cx="30" cy="28" r="9" fill="#fff4e0" stroke="#1a1340" strokeWidth="4" />
+                <path d="M30 76C14 52 6 42 6 28a24 24 0 0148 0c0 14-8 24-24 48z" fill="#3ea6ff" stroke="#0a1f3d" strokeWidth="4" />
+                <circle cx="30" cy="28" r="9" fill="#fff4e0" stroke="#0a1f3d" strokeWidth="4" />
               </svg>
               <span className="absolute bottom-3 left-3 rounded-lg border border-linea bg-white px-2.5 py-1 text-[12px] font-semibold">
                 Mapa de ejemplo
@@ -237,7 +237,7 @@ export function DetalleRepuesto() {
                 <li key={k} className="flex flex-1 items-center gap-2">
                   <span
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-linea font-display text-[14px] font-semibold"
-                    style={{ background: i <= idxPaso ? "#ff8a1f" : "#fff" }}
+                    style={{ background: i <= idxPaso ? "#3ea6ff" : "#fff" }}
                   >
                     {i + 1}
                   </span>
@@ -275,7 +275,7 @@ export function DetalleRepuesto() {
               <div className="mt-4 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Modo de entrega">
                 {(
                   [
-                    ["recoger", "Recoger en la tienda", "#ece8ff"],
+                    ["recoger", "Recoger en la tienda", "#e3efff"],
                     ["envio", "Envío a mi casa", "#ffeedd"],
                   ] as const
                 ).map(([k, t, c]) => (
@@ -286,7 +286,7 @@ export function DetalleRepuesto() {
                     aria-checked={modo === k}
                     onClick={() => setModo(k)}
                     className="rounded-2xl border border-linea p-3 text-left font-display text-[14px] font-semibold transition"
-                    style={{ background: modo === k ? c : "#fff", borderColor: modo === k ? "#7a5cff" : undefined }}
+                    style={{ background: modo === k ? c : "#fff", borderColor: modo === k ? "#2f8bff" : undefined }}
                   >
                     {k === "envio" && <Moto />}
                     {t}

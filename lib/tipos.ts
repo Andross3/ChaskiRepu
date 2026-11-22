@@ -37,23 +37,23 @@ export interface InfoCondicion {
 export const CONDICIONES: Record<string, InfoCondicion> = {
   original: {
     label: "Original",
-    bg: "#1a1340",
+    bg: "#0a1f3d",
     fg: "#ffffff",
-    borde: "#1a1340",
+    borde: "#0a1f3d",
     desc: "De fábrica, la pieza exacta de tu marca.",
   },
   nuevo: {
     label: "Nuevo",
-    bg: "#1a1340",
+    bg: "#0a1f3d",
     fg: "#ffffff",
-    borde: "#1a1340",
+    borde: "#0a1f3d",
     desc: "Sin uso, directo de la tienda.",
   },
   alternativo: {
     label: "Alternativo",
-    bg: "#ece8ff",
-    fg: "#2a1f66",
-    borde: "#d9d0ff",
+    bg: "#e3efff",
+    fg: "#12315f",
+    borde: "#c3dcff",
     desc: "Nuevo de otra marca, con buena calidad y mejor precio.",
   },
   usado: {

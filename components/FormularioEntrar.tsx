@@ -10,7 +10,7 @@ const campo =
 const etiqueta = "block text-[12px] font-semibold uppercase tracking-wider text-ink-2";
 
 const OPCIONES: { id: Rol; titulo: string; texto: string; tono: string }[] = [
-  { id: "usuario", titulo: "Quiero buscar repuestos", texto: "Para mi auto o mi moto", tono: "#ece8ff" },
+  { id: "usuario", titulo: "Quiero buscar repuestos", texto: "Para mi auto o mi moto", tono: "#e3efff" },
   { id: "tienda", titulo: "Ya tengo una tienda", texto: "Quiero vender mis repuestos", tono: "#ffeedd" },
 ];
 
@@ -30,7 +30,7 @@ export function FormularioEntrar() {
   return (
     <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:py-14">
       <section className="plano-tecnico relative overflow-hidden rounded-[2rem] p-8 text-white sombra-alta">
-        <p className="inline-block rounded-full border border-ambar/60 px-3.5 py-1 text-[13px] font-semibold text-ambar">
+        <p className="inline-block rounded-full border border-white/60 bg-white/10 px-3.5 py-1 text-[13px] font-semibold text-white">
           {esTienda ? "Para tiendas" : "Para ti"}
         </p>
         <h1 className="mt-4 font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
@@ -50,7 +50,7 @@ export function FormularioEntrar() {
               ]
           ).map((t) => (
             <li key={t} className="flex gap-3">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ambar text-[12px] font-bold text-marino">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-[12px] font-bold text-azul">
                 ✓
               </span>
               {t}
@@ -72,7 +72,7 @@ export function FormularioEntrar() {
               aria-checked={rol === o.id}
               onClick={() => setRol(o.id)}
               className="rounded-2xl border border-linea p-4 text-left transition hover:border-azul/50"
-              style={{ background: rol === o.id ? o.tono : "#fff", borderColor: rol === o.id ? "#7a5cff" : undefined }}
+              style={{ background: rol === o.id ? o.tono : "#fff", borderColor: rol === o.id ? "#2f8bff" : undefined }}
             >
               <span className="block font-display text-[17px] font-semibold text-marino">{o.titulo}</span>
               <span className="block text-[13px] text-ink-2">{o.texto}</span>

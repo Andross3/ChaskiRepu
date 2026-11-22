@@ -1,9 +1,9 @@
-const N = "#1a1340";
-const C = "#ff8a1f";
-const S = "#b8a8ff";
-const T = "#7a5cff";
-const F = "#ffb86b";
-const W = "#f7f4fb";
+const N = "#0a1f3d";
+const C = "#3ea6ff";
+const S = "#9cc4ff";
+const T = "#2f8bff";
+const F = "#22d3ee";
+const W = "#f3f7fc";
 
 function Engranaje() {
   return (

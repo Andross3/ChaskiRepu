@@ -6,10 +6,10 @@ import { useEffect, useMemo, useRef, useState, type MutableRefObject, type RefOb
 import * as THREE from "three";
 import type { TipoVehiculo, Zona } from "@/lib/tipos";
 
-const CIAN = "#d6c9ff";
-const AZUL_LINEA = "#a58cff";
-const RELLENO = "#7a5cff";
-const AMBAR = "#ff8a1f";
+const CIAN = "#8fe9ff";
+const AZUL_LINEA = "#4aa8ff";
+const RELLENO = "#2f8bff";
+const AMBAR = "#5ee1ff";
 
 /* ---------- utilidades de forma ---------- */
 
@@ -639,10 +639,10 @@ function Escena({ tipo, zonas, zonaId, onZona, botones, panelAbajo }: Props & { 
         args={[30, 30]}
         cellSize={0.5}
         cellThickness={0.6}
-        cellColor="#4b3aa8"
+        cellColor="#2a6fc4"
         sectionSize={2.5}
         sectionThickness={1.1}
-        sectionColor="#8a74ff"
+        sectionColor="#5fb4ff"
         fadeDistance={14}
         fadeStrength={1.6}
         infiniteGrid
