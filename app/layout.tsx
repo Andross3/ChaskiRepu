@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
-import { Footer } from "@/components/Footer";
-import { Navbar } from "@/components/Navbar";
+import { Fraunces, Inter, Geist } from "next/font/google";
+import { AppLayoutWrapper } from "@/components/AppLayoutWrapper";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const inter = Inter({
   variable: "--font-inter",
@@ -20,13 +22,25 @@ export const metadata: Metadata = {
     "Encuentra repuestos originales, alternativos, usados y restaurados para tu auto o moto, compara precios, reserva y recíbelos en tu casa.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="es" className={`${inter.variable} ${fraunces.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
-        <Navbar />
-        <div className="flex-1">{children}</div>
-        <Footer />
+    <html
+      lang="es"
+      className={cn(
+        "h-full",
+        "antialiased",
+        inter.variable,
+        fraunces.variable,
+        "font-sans",
+        geist.variable
+      )}
+    >
+      <body className="min-h-full">
+        <AppLayoutWrapper>{children}</AppLayoutWrapper>
       </body>
     </html>
   );

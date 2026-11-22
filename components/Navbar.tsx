@@ -6,6 +6,7 @@ import { Logo } from "./Logo";
 
 const ENLACES = [
   { href: "/buscar", texto: "Buscar repuestos" },
+  { href: "/oportunidades-mercado", texto: "Oportunidades de mercado" },
   { href: "/#como-funciona", texto: "Cómo funciona" },
   { href: "/#tiendas", texto: "Para tiendas" },
 ];

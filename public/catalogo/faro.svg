@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Faro delantero">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fbff"/>
+      <stop offset="1" stop-color="#dbeafe"/>
+    </linearGradient>
+    <radialGradient id="luz" cx="45%" cy="50%" r="55%">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".6" stop-color="#bfdbfe"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </radialGradient>
+    <filter id="sombra" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#1e3a8a" flood-opacity=".18"/>
+    </filter>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <g stroke="#bfdbfe" stroke-width="2" opacity=".55">
+    <path d="M0 100h800M0 200h800M0 300h800M0 400h800M0 500h800"/>
+    <path d="M100 0v600M200 0v600M300 0v600M400 0v600M500 0v600M600 0v600M700 0v600"/>
+  </g>
+  <g filter="url(#sombra)">
+    <path d="M186 228c64-62 182-84 296-48 66 21 112 58 132 98-20 44-70 82-138 102-112 33-228 10-292-52-16-32-16-68 2-100z" fill="#1e3a8a"/>
+    <path d="M214 240c58-50 160-68 258-40 52 15 92 42 112 72-20 32-62 60-116 76-98 29-200 11-254-40-10-24-10-48 0-68z" fill="url(#luz)" stroke="#93c5fd" stroke-width="5"/>
+    <ellipse cx="352" cy="292" rx="92" ry="64" fill="#ffffff" opacity=".9"/>
+    <ellipse cx="352" cy="292" rx="54" ry="38" fill="#dbeafe"/>
+    <ellipse cx="352" cy="292" rx="24" ry="17" fill="#60a5fa"/>
+  </g>
+  <g stroke="#fbbf24" stroke-width="10" stroke-linecap="round" opacity=".9">
+    <path d="M486 232l96-36"/>
+    <path d="M504 276l108-8"/>
+    <path d="M490 320l92 36"/>
+  </g>
+  <g fill="#2563eb" opacity=".9">
+    <rect x="92" y="470" width="100" height="14" rx="7"/>
+    <rect x="92" y="496" width="64" height="14" rx="7"/>
+  </g>
+</svg>
