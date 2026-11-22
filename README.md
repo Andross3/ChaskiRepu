@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ChaskiRepu
 
-## Getting Started
+**Tu repuesto, sin dar vueltas.** Marketplace web para encontrar repuestos de autos y motos (a gasolina, híbridos y eléctricos): originales, alternativos, usados y restaurados.
 
-First, run the development server:
+Proyecto del Abstracthon 2026 (track Ayuda tecnológica).
+
+## Qué hace
+
+- **Vehículo 3D interactivo:** eliges auto o moto, tocas la zona que falla (llantas, frenos, motor, luces...) y la cámara se acerca; un panel te muestra las piezas de esa zona para identificar la correcta, o puedes subir una foto.
+- **Búsqueda y filtros:** por nombre o descripción, precio, condición (original, alternativo, usado, restaurado) y disponibilidad.
+- **Detalle del repuesto y reserva:** reserva con una comisión, elección de recoger en tienda o envío a domicilio, y pago simulado con QR.
+- **Para tiendas:** inicio de sesión por rol, formulario de datos de la tienda y panel con inventario, reservas y oportunidades de venta.
+
+## Tecnologías
+
+- Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4
+- Three.js con React Three Fiber y Drei para el vehículo 3D
+- Supabase (base de datos PostgreSQL)
+
+## Cómo correrlo
 
 ```bash
+npm install
+cp .env.example .env   # y completa las dos variables
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Variables de entorno (`.env`):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+```
 
-## Learn More
+La app lee las tablas `proveedores` y `repuestos` de Supabase. Sin esas variables la web carga, pero sin repuestos reales.
 
-To learn more about Next.js, take a look at the following resources:
+## Estado del prototipo
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Esto es un prototipo para el hackathon. Lo que es de demostración:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Pagos:** el pago P2P y el QR son una simulación; no se mueve dinero.
+- **Inicio de sesión:** todavía no valida credenciales; solo elige el rol (buscar repuestos o tienda).
+- **Datos de ejemplo:** además de los repuestos de la base de datos, se muestran algunos de ejemplo marcados con la etiqueta "Ejemplo".
+- **IA:** la identificación de la pieza por foto está pendiente; hoy se sube la foto y se busca con la descripción.
+- **Entrega:** la reserva y el envío no se guardan todavía en la base de datos.
 
-## Deploy on Vercel
+## Estructura
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/          páginas (inicio, buscar, repuesto, entrar, tienda)
+components/   interfaz y el vehículo 3D
+lib/          tipos, datos de Supabase, piezas por zona
+```

@@ -1,69 +1,146 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Destacados } from "@/components/Destacados";
+import { EtiquetaCondicion } from "@/components/Etiqueta";
+import { Hero } from "@/components/Hero";
+import { CONDICIONES } from "@/lib/tipos";
 
-export default function Home() {
+const PASOS = [
+  {
+    n: "1",
+    titulo: "Encuentra",
+    texto:
+      "Elige tu vehículo, toca la zona que falla o describe la pieza. Te mostramos el repuesto exacto en tiendas de tu ciudad.",
+  },
+  {
+    n: "2",
+    titulo: "Reserva",
+    texto:
+      "Aparta el repuesto con una pequeña comisión antes de que se acabe. Pagas el resto al recogerlo o recibirlo.",
+  },
+  {
+    n: "3",
+    titulo: "Recibe",
+    texto: "Recógelo en la tienda o pídelo a tu casa si la tienda hace envíos. Tú no das vueltas.",
+  },
+];
+
+export default function Inicio() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main>
+      <Hero />
+
+      <section id="como-funciona" className="scroll-mt-20 pb-16 pt-40">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="font-display text-4xl font-semibold tracking-tight text-marino sm:text-[44px]">
+            Encuentra, reserva y recibe
+          </h2>
+          <p className="mt-3 max-w-xl text-[17px] text-ink-2">Tres pasos para dejar de caminar de tienda en tienda.</p>
+          <div className="mt-9 grid gap-6 md:grid-cols-3">
+            {PASOS.map((p) => (
+              <article key={p.n} className="revelar rounded-2xl border border-linea bg-white p-7 sombra-suave">
+                <span className="flex h-11 w-11 items-center justify-center rounded-full boton-primario font-display text-xl font-semibold">
+                  {p.n}
+                </span>
+                <h3 className="mt-5 font-display text-2xl font-semibold text-marino">{p.titulo}</h3>
+                <p className="mt-2 text-[16px] leading-relaxed text-ink-2">{p.texto}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-linea bg-arena py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="font-display text-3xl font-semibold tracking-tight text-marino sm:text-4xl">
+            Original, alternativo, usado o restaurado
+          </h2>
+          <p className="mt-3 max-w-xl text-[17px] text-ink-2">
+            Tú decides cuánto quieres pagar. Siempre sabes qué estás comprando.
           </p>
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {["original", "alternativo", "usado", "restaurado"].map((k) => (
+              <div key={k} className="revelar rounded-2xl border border-linea bg-white p-5">
+                <EtiquetaCondicion condicion={k} />
+                <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{CONDICIONES[k].desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <section className="py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="font-display text-3xl font-semibold tracking-tight text-marino sm:text-4xl">
+            Disponibles ahora
+          </h2>
+          <p className="mb-8 mt-3 max-w-xl text-[17px] text-ink-2">
+            Repuestos publicados por tiendas, con precio, estado y distancia.
+          </p>
+          <Destacados />
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section id="tiendas" className="scroll-mt-20 plano-tecnico py-16 text-white">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
+          <div>
+            <p className="text-[13px] font-semibold uppercase tracking-wider text-ambar">Para tiendas</p>
+            <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-[44px] sm:leading-[1.1]">
+              Vende a quien ya te está buscando
+            </h2>
+            <ul className="mt-6 space-y-3 text-[17px] text-white/85">
+              {[
+                "Publica tus repuestos nuevos, usados y restaurados.",
+                "Recibe reservas y confírmalas desde tu panel.",
+                "Mira qué repuestos busca la gente y no encuentra.",
+              ].map((t) => (
+                <li key={t} className="flex gap-3">
+                  <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ambar text-[11px] font-bold text-marino">
+                    ✓
+                  </span>
+                  {t}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/entrar?rol=tienda"
+              className="mt-8 inline-block rounded-xl boton-ambar px-7 py-3.5 text-[16px] font-semibold"
+            >
+              Registrar mi tienda
+            </Link>
+          </div>
+
+          <div className="rounded-3xl bg-white p-5 text-ink sombra-alta">
+            <div className="flex items-center justify-between">
+              <p className="font-display text-xl font-semibold text-marino">Oportunidades de venta</p>
+              <span className="rounded-full bg-ambar-suave px-3 py-0.5 text-[12px] font-semibold text-[#8a4300]">
+                3 nuevas
+              </span>
+            </div>
+            {[
+              ["3 personas buscan", "Pastillas de freno · Suzuki Swift 2018", "hace 12 min"],
+              ["2 personas buscan", "Batería de litio · moto eléctrica", "hace 40 min"],
+              ["1 persona busca", "Faro delantero LED · Toyota Prius", "hace 2 h"],
+            ].map(([a, b, c]) => (
+              <div
+                key={b}
+                className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-linea bg-hielo px-4 py-3"
+              >
+                <div>
+                  <p className="text-[15px] font-semibold text-marino">{a}</p>
+                  <p className="text-[13px] text-ink-2">{b}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[12px] text-ink-2">{c}</p>
+                  <span className="mt-1 inline-block rounded-lg bg-marino px-3 py-1 text-[12px] font-semibold text-white">
+                    Ofrecer
+                  </span>
+                </div>
+              </div>
+            ))}
+            <p className="mt-3 text-[12px] text-ink-2">Vista de ejemplo del panel de la tienda.</p>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
