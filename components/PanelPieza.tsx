@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import type { ResultadoIA } from "@/lib/ia";
 import { reducirImagen } from "@/lib/imagen";
@@ -28,7 +29,9 @@ export function PanelPieza({ tipo, motor, zona, pieza, onPieza, onCerrar, hrefBa
   const [foto, setFoto] = useState<string | null>(null);
   const [nota, setNota] = useState("");
   const [archivo, setArchivo] = useState<File | null>(null);
+  const router = useRouter();
   const [analizando, setAnalizando] = useState(false);
+  const [redirigiendo, setRedirigiendo] = useState(false);
   const [resultadoIA, setResultadoIA] = useState<ResultadoIA | null>(null);
   const [errorIA, setErrorIA] = useState("");
   const fotoActual = useRef<string | null>(null);
@@ -69,7 +72,13 @@ export function PanelPieza({ tipo, motor, zona, pieza, onPieza, onCerrar, hrefBa
       });
       const datos = (await r.json().catch(() => ({}))) as Partial<ResultadoIA> & { error?: string };
       if (!r.ok) throw new Error(datos.error ?? "No pudimos identificar la pieza.");
-      setResultadoIA(datos as ResultadoIA);
+      const resultado = datos as ResultadoIA;
+      setResultadoIA(resultado);
+      // Con una pieza identificada se pasa directo a los repuestos de esa pieza.
+      if (resultado.estado === "identificada" && resultado.pieza) {
+        setRedirigiendo(true);
+        router.push(`${conTexto(resultado.pieza)}&pieza=${encodeURIComponent(resultado.pieza)}`);
+      }
     } catch (e) {
       setErrorIA(e instanceof Error ? e.message : "No pudimos identificar la pieza. Busca con una descripción.");
     } finally {
@@ -176,10 +185,16 @@ export function PanelPieza({ tipo, motor, zona, pieza, onPieza, onCerrar, hrefBa
           <button
             type="button"
             onClick={identificar}
-            disabled={!archivo || analizando}
+            disabled={!archivo || analizando || redirigiendo}
             className="w-full rounded-xl border border-cian/60 bg-cian/15 px-4 py-2 text-[14px] font-semibold text-white transition hover:bg-cian/25 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {analizando ? "Analizando la foto..." : archivo ? "Identificar la pieza con IA" : "Elige una foto para identificarla con IA"}
+            {analizando
+              ? "Analizando la foto..."
+              : redirigiendo
+                ? "Buscando los repuestos..."
+                : archivo
+                  ? "Identificar la pieza y buscarla con IA"
+                  : "Elige una foto para identificarla con IA"}
           </button>
 
           {resultadoIA && (
