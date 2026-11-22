@@ -46,6 +46,8 @@ export function PanelPieza({ tipo, motor, zona, pieza, onPieza, onCerrar, hrefBa
   }
 
   const conTexto = (texto: string) => (texto ? `${hrefBase}&q=${encodeURIComponent(texto)}` : hrefBase);
+  // Con una pieza elegida se envía también `pieza`, para que /buscar muestre solo esa pieza y no toda la zona.
+  const enlaceDeBusqueda = modoFoto ? conTexto(nota.trim()) : elegida ? `${conTexto(elegida.nombre)}&pieza=${encodeURIComponent(elegida.nombre)}` : hrefBase;
 
   const contenedor = compacto
     ? "vidrio aparecer pointer-events-auto absolute inset-x-3 bottom-3 flex max-h-[88%] flex-col rounded-2xl p-3.5 text-white"
@@ -136,7 +138,7 @@ export function PanelPieza({ tipo, motor, zona, pieza, onPieza, onCerrar, hrefBa
 
       <div className={`mt-2.5 gap-2 ${compacto ? "flex flex-wrap" : "space-y-2"}`}>
         <Link
-          href={conTexto(modoFoto ? nota.trim() : (elegida?.nombre ?? ""))}
+          href={enlaceDeBusqueda}
           className={`boton-ambar block rounded-xl px-4 py-2.5 text-center text-[14px] font-semibold ${compacto ? "flex-1" : ""}`}
         >
           {modoFoto
