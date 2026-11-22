@@ -23,6 +23,7 @@ export function Footer() {
           <p className="text-sm font-semibold text-ambar">Para tiendas</p>
           <ul className="mt-3 space-y-2 text-[14px] text-white/75">
             <li><Link href="/entrar?rol=tienda" className="hover:text-white">Registrar mi tienda</Link></li>
+            <li><Link href="/registro-proveedor" className="hover:text-white">Registro de proveedor</Link></li>
             <li><Link href="/#tiendas" className="hover:text-white">Oportunidades de venta</Link></li>
           </ul>
         </div>
