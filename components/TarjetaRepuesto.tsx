@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Chip, EtiquetaCondicion } from "./Etiqueta";
 import { Ilustracion } from "./Ilustracion";
+import { fotoDe } from "@/lib/fotos";
 import { distanciaKm, textoDistancia, UBICACION_BASE } from "@/lib/geo";
 import { formatBs, type Repuesto } from "@/lib/tipos";
 
@@ -15,6 +16,7 @@ export function fondoPor(id: string): string {
 export function TarjetaRepuesto({ r, indice = 0 }: { r: Repuesto; indice?: number }) {
   const km = r.proveedores ? distanciaKm(UBICACION_BASE, r.proveedores) : null;
   const pocas = r.stock > 0 && r.stock <= 3;
+  const foto = fotoDe(r);
 
   return (
     <Link
@@ -29,10 +31,20 @@ export function TarjetaRepuesto({ r, indice = 0 }: { r: Repuesto; indice?: numbe
             Ejemplo
           </span>
         )}
-        <Ilustracion
-          categoria={r.categoria}
-          className="h-24 w-32 transition duration-300 group-hover:scale-105"
-        />
+        {foto ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={foto}
+            alt={r.nombre}
+            loading="lazy"
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <Ilustracion
+            categoria={r.categoria}
+            className="h-24 w-32 transition duration-300 group-hover:scale-105"
+          />
+        )}
       </div>
 
       <div className="p-4">

@@ -1,5 +1,5 @@
-/** Ubicación de referencia del usuario (centro de La Paz) mientras no se pida el permiso del GPS. */
-export const UBICACION_BASE = { lat: -16.4955, lng: -68.1336 };
+/** Ubicación de referencia del usuario (centro de Cochabamba) mientras no se pida el permiso del GPS. */
+export const UBICACION_BASE = { lat: -17.3935, lng: -66.157 };
 
 export function distanciaKm(
   a: { lat: number; lng: number },
