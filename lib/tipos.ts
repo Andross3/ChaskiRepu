@@ -6,6 +6,10 @@ export interface Proveedor {
   lat: number | null;
   lng: number | null;
   whatsapp: string | null;
+  horario?: string | null;
+  hace_envio?: boolean;
+  radio_envio_km?: number | null;
+  costo_envio_bs?: number | null;
 }
 
 export interface Repuesto {
@@ -22,6 +26,9 @@ export interface Repuesto {
   stock: number;
   tipo_vehiculo: string;
   motor?: "gasolina" | "hibrido" | "electrico";
+  /** Rutas de las fotos dentro del bucket "repuestos" de Supabase Storage. */
+  imagenes?: string[] | null;
+  descripcion?: string | null;
   proveedores?: Proveedor | null;
   ejemplo?: boolean;
 }

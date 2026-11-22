@@ -23,6 +23,9 @@ interface Fila {
   codigo?: string | null;
   equivalencias?: string[] | null;
   sinonimos?: string[] | null;
+  motor?: "gasolina" | "hibrido" | "electrico" | null;
+  imagenes?: string[] | null;
+  descripcion?: string | null;
   proveedores?: ProveedorFila | null;
 }
 
@@ -31,6 +34,12 @@ interface ProveedorFila {
   nombre_tienda: string | null;
   ubicacion_tienda: string | null;
   telefono: string | null;
+  lat: number | null;
+  lng: number | null;
+  horario: string | null;
+  hace_envio: boolean | null;
+  radio_envio_km: number | null;
+  costo_envio_bs: number | null;
 }
 
 function normalizarProveedor(p: ProveedorFila | null | undefined): Proveedor | null {
@@ -38,10 +47,14 @@ function normalizarProveedor(p: ProveedorFila | null | undefined): Proveedor | n
   return {
     nombre: p.nombre_tienda ?? "Tienda",
     direccion: p.ubicacion_tienda,
-    // La tabla todavía no guarda coordenadas; hasta agregarlas la distancia queda "por confirmar".
-    lat: null,
-    lng: null,
+    // Si la tienda no guardó su ubicación, la distancia queda "por confirmar".
+    lat: p.lat,
+    lng: p.lng,
     whatsapp: p.telefono,
+    horario: p.horario,
+    hace_envio: p.hace_envio ?? false,
+    radio_envio_km: p.radio_envio_km,
+    costo_envio_bs: p.costo_envio_bs,
   };
 }
 
@@ -59,6 +72,9 @@ function normalizar(f: Fila): Repuesto {
     precio_bs: Number(f.precio ?? f.precio_bs ?? 0),
     stock: Number(f.stock ?? 0),
     tipo_vehiculo: f.tipo_vehiculo ?? "auto",
+    motor: f.motor ?? undefined,
+    imagenes: f.imagenes ?? null,
+    descripcion: f.descripcion ?? null,
     proveedores: normalizarProveedor(f.proveedores),
   };
 }
@@ -73,7 +89,7 @@ export async function cargarRepuestos(incluirEjemplos = true): Promise<Resultado
   if (supabase) {
     const { data, error: err } = await supabase
       .from("repuestos")
-      .select("*, proveedores(nombre_tienda,ubicacion_tienda,telefono)");
+      .select("*, proveedores(nombre_tienda,ubicacion_tienda,telefono,lat,lng,horario,hace_envio,radio_envio_km,costo_envio_bs)");
     if (err) error = err.message;
     else {
       reales = ((data ?? []) as unknown as Fila[]).map(normalizar).sort((a, b) => a.precio_bs - b.precio_bs);
@@ -82,6 +98,7 @@ export async function cargarRepuestos(incluirEjemplos = true): Promise<Resultado
     error = "Falta configurar las claves de Supabase en el archivo .env";
   }
 
-  const items = incluirEjemplos ? [...reales, ...REPUESTOS_DEMO] : reales;
+  // Los repuestos de diseño solo se muestran mientras la base no tenga repuestos propios.
+  const items = incluirEjemplos && reales.length === 0 ? REPUESTOS_DEMO : reales;
   return { items, reales: reales.length, error };
 }
