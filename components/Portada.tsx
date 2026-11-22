@@ -2,9 +2,10 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { DatosVehiculo } from "./DatosVehiculo";
 import { PanelPieza } from "./PanelPieza";
 import { SelectorMarca } from "./SelectorMarca";
-import { ANIOS, MARCAS, useBuscador } from "@/lib/useBuscador";
+import { MARCAS, useBuscador } from "@/lib/useBuscador";
 
 const CarroTecnico3D = dynamic(() => import("./CarroTecnico3D"), {
   ssr: false,
@@ -13,9 +14,6 @@ const CarroTecnico3D = dynamic(() => import("./CarroTecnico3D"), {
   ),
 });
 
-const campo =
-  "mt-1.5 w-full rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-[14px] font-medium text-white outline-none transition placeholder:text-white/45 focus:border-ambar [&>option]:text-black";
-const etiqueta = "block text-[11px] font-semibold uppercase tracking-wider text-white/65";
 
 const CONDICIONES = [
   ["Original", "#6ee7a8"],
@@ -147,27 +145,8 @@ export function Portada() {
             <SelectorMarca compacto marcas={MARCAS[tipo]} valor={b.marca} onCambiar={b.setMarca} />
           </div>
 
-          <div className="mt-2 grid grid-cols-2 gap-2.5">
-            <label className={etiqueta}>
-              Modelo
-              <input
-                value={b.modelo}
-                onChange={(e) => b.setModelo(e.target.value)}
-                placeholder={tipo === "auto" ? "Ej. Swift" : "Ej. FZ 150"}
-                className={campo}
-              />
-            </label>
-            <label className={etiqueta}>
-              Año
-              <select value={b.anio} onChange={(e) => b.setAnio(e.target.value)} className={campo}>
-                <option value="">Elige</option>
-                {ANIOS.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="mt-2">
+            <DatosVehiculo b={b} />
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2.5">

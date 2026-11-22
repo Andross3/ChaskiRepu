@@ -17,6 +17,9 @@ const normalizar = (s: string) =>
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "");
 
+/** Deja solo números de una medida de llanta: "195/65 R15" y "195/65R15" quedan iguales. */
+const soloMedida = (s: string) => normalizar(s).replace(/[^0-9]/g, "");
+
 /** Cuántas palabras de la búsqueda aparecen en el repuesto (sin tildes ni mayúsculas). */
 function puntaje(r: Repuesto, q: string): number {
   const palabras = normalizar(q)
@@ -36,6 +39,8 @@ export function BuscarCliente() {
   const marca = sp.get("marca");
   const modelo = sp.get("modelo");
   const anio = sp.get("anio");
+  const medida = sp.get("medida");
+  const codMotor = sp.get("codmotor");
 
   const [items, setItems] = useState<Repuesto[] | null>(null);
   const [reales, setReales] = useState(0);
@@ -80,6 +85,7 @@ export function BuscarCliente() {
       if (!ejemplos && r.ejemplo) return false;
       if (tipo !== "todos" && r.tipo_vehiculo !== tipo) return false;
       if (zonaInfo && !zonaInfo.categorias.some((c) => c.toLowerCase() === r.categoria.toLowerCase())) return false;
+      if (medida && r.categoria.toLowerCase() === "llantas" && !soloMedida(r.nombre).includes(soloMedida(medida))) return false;
       if (conds.length && !conds.includes(r.condicion.toLowerCase())) return false;
       if (r.precio_bs > maxActual) return false;
       if (soloStock && r.stock <= 0) return false;
@@ -93,7 +99,7 @@ export function BuscarCliente() {
       }
       return orden === "caro" ? b.precio_bs - a.precio_bs : a.precio_bs - b.precio_bs;
     });
-  }, [items, ejemplos, tipo, zonaInfo, conds, maxActual, soloStock, q, orden]);
+  }, [items, ejemplos, tipo, zonaInfo, medida, conds, maxActual, soloStock, q, orden]);
 
   const alternar = (c: string) => setConds((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]));
   const hayFiltros = conds.length > 0 || zona !== null || tipo !== "todos" || precioMax !== null || q !== "";
@@ -111,9 +117,9 @@ export function BuscarCliente() {
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
           <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Buscar repuestos</h1>
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            {(marca || modelo || anio) && (
+            {(marca || modelo || anio || medida || codMotor) && (
               <span className="rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-[14px] font-semibold text-white">
-                {[marca, modelo, anio].filter(Boolean).join(" · ")}
+                {[marca, modelo, anio, codMotor && `motor ${codMotor}`, medida && `llanta ${medida}`].filter(Boolean).join(" · ")}
               </span>
             )}
             {tipoInicial && (

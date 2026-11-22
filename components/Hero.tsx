@@ -4,7 +4,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { PanelPieza } from "./PanelPieza";
 import { SelectorMarca } from "./SelectorMarca";
-import { ANIOS, MARCAS, SUGERENCIAS, useBuscador } from "@/lib/useBuscador";
+import { DatosVehiculo } from "./DatosVehiculo";
+import { MARCAS, SUGERENCIAS, useBuscador } from "@/lib/useBuscador";
 
 const CarroTecnico3D = dynamic(() => import("./CarroTecnico3D"), {
   ssr: false,
@@ -122,27 +123,8 @@ export function Hero({ saludo, titulo }: { saludo: string; titulo: string }) {
             <SelectorMarca claro marcas={MARCAS[tipo]} valor={b.marca} onCambiar={b.setMarca} />
           </div>
 
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            <label className={etiqueta}>
-              Modelo
-              <input
-                value={b.modelo}
-                onChange={(e) => b.setModelo(e.target.value)}
-                placeholder={tipo === "auto" ? "Ej. Swift" : "Ej. FZ 150"}
-                className={campo}
-              />
-            </label>
-            <label className={etiqueta}>
-              Año
-              <select value={b.anio} onChange={(e) => b.setAnio(e.target.value)} className={campo}>
-                <option value="">Elige el año</option>
-                {ANIOS.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="mt-3">
+            <DatosVehiculo claro b={b} />
           </div>
 
           <label className={`${etiqueta} mt-4`}>
